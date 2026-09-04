@@ -1,16 +1,19 @@
 /// Turn a given input string into a sequence of commands. Not case sensitive.
 pub fn parse(input: &str) -> Vec<tokenisation::Token>{
-    // vec is annoying to need, but iterators are lazy 
+    // vec is annoying to need, but iterators are lazy
     // so the tokenised string is used after the function returns
     // And does not live long enough
     // Unless we consume the iterator to produce a Vec, forcing it to completely drain before returning
-    tokenisation::tokenise(input.to_lowercase().trim()).collect()
+    let mut trimmed = String::from(input.to_lowercase().trim());
+    // add frontmatter to buffer the peekable iterator consuming the first item
+    trimmed.push(' ');
+    tokenisation::tokenise(&trimmed).collect()
 }
 pub mod tokenisation {
     use Token::*;
-    use itertools::{Itertools};
+    use itertools::Itertools;
     use regular_expressions::*;
-    use std::str::Chars;
+    use std::{iter::Peekable, str::Chars};
     mod regular_expressions {
         //! The patterns to match against to determine the type of token
         // centralised here to be easily changeable if i want the syntax to change
@@ -24,10 +27,12 @@ pub mod tokenisation {
             if let End = token { None } else { Some(token) }
         })
     }
+    #[derive(Debug)]
     struct Cursor<'a> {
-        chars: Chars<'a>,
-    }
+        chars: Peekable<Chars<'a>>,
+    } 
     impl<'a> Iterator for Cursor<'a> {
+        // needs to be peeking- how to impl PeekingNext
         type Item = char;
         fn next(&mut self) -> Option<Self::Item> {
             self.chars.next()
@@ -35,37 +40,42 @@ pub mod tokenisation {
     }
     impl<'a> Cursor<'a> {
         fn new(input: &'a str) -> Cursor<'a> {
-            Cursor {
-                chars: input.chars(),
-            }
+            // peek() consumes the first and only the first element
+            let mut cursor = Cursor {
+                chars: input.chars().peekable(),
+            };
+            // consume the frontmatter, it no longer consumes when peeking
+            cursor.chars.peek();
+            cursor
         }
         fn advance_token(&mut self) -> Token {
-            let _next = self.peekable().peek().unwrap();
-            let Some(char) = self.next() else {
+            let Some(char) = self.chars.peek() else {
                 return End;
             };
-            
             // PROBLEM: ASCII only
-            match char.to_ascii_lowercase() {
+            // PROBLEM: consumes additional item in peeking_take_while
+            // SOLUTION ALGORITHM: recognise the next char is a number, then consume it with peeking_take_while
+            let token = match char.to_ascii_lowercase() {
                 // numeric literal
                 c @ '0'..='9' => Number {
-                    value: self.eat_digits(c),
+                    value: self.eat_digits(),
                 },
                 ROLL_INVOKATION => DiceRollInvokation,
                 END_OF_INPUT => End,
                 // symbol not in regular language, hence invalid
                 c@ _ => Unknown {pat: self.unknown(c)},
-            }
+            };
+            self.next();
+            token
         }
         /// Continue to consume chars whilst in a digit, then returning the numeric value of those digits.
-        fn eat_digits(&mut self, first_digit: char) -> u32 {
-            let mut number = String::from(first_digit);
+        fn eat_digits(&mut self) -> u32 {
+            let mut number = String::new();
             self.peekable().peeking_take_while(|ch|ch.is_numeric()).for_each(|ch|number.push(ch));
             // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
             // so all chars are certain to be digits.
             #[allow(clippy::unwrap_used)]
-            let num = number.parse::<u32>().unwrap();
-            num
+            number.parse::<u32>().unwrap()
         }
         fn unknown(&mut self, first_character: char) -> String {
             let mut pat = String::from(first_character);
@@ -100,18 +110,11 @@ pub mod tokenisation {
         #[test]
         fn parse_digits() {
             let mut cursor = Cursor::new("123");
-            let first = cursor.next().unwrap();
-            assert_eq!(cursor.eat_digits(first), 123);
+            assert_eq!(cursor.eat_digits(), 123);
         }
         #[test]
         fn get_dice_tokens() {
-            let tokens: Vec<Token> = tokenise("1d6").collect();
-            // debug
-            println!("{}", tokens.len());
-            for i in 0..tokens.len() {
-                println!("{:?}", tokens.iter().nth(i))
-            } 
-            let mut tokens = tokens.into_iter();
+            let mut tokens = tokenise("1d6");
             assert_eq!(tokens.next().unwrap(), Number { value: 1 });
             assert_eq!(tokens.next().unwrap(), DiceRollInvokation);
             assert_eq!(tokens.next().unwrap(), Number { value: 6 });
