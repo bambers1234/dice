@@ -2,6 +2,7 @@
 mod dice;
 mod errors;
 mod tokens;
+mod ast;
 fn main() {
     loop {
         let mut input = String::new();

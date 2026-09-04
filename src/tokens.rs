@@ -1,9 +1,12 @@
 /// Turn a given input string into a sequence of commands. Not case sensitive.
-pub fn parse(input: &str) -> impl Iterator<Item=Token>{
-    let lower = input.to_lowercase();
-    tokenisation::tokenise(lower.trim());
+pub fn parse(input: &str) -> Vec<tokenisation::Token>{
+    // vec is annoying to need, but iterators are lazy 
+    // so the tokenised string is used after the function returns
+    // And does not live long enough
+    // Unless we consume the iterator to produce a Vec, forcing it to completely drain before returning
+    tokenisation::tokenise(input.to_lowercase().trim()).collect()
 }
-mod tokenisation {
+pub mod tokenisation {
     use Token::*;
     use regular_expressions::*;
     use std::str::Chars;
@@ -36,7 +39,7 @@ mod tokenisation {
             }
         }
         fn advance_token(&mut self) -> Token {
-            let Some(char) = self.advance() else {
+            let Some(char) = self.next() else {
                 return End;
             };
             // PROBLEM: ASCII only
@@ -58,7 +61,7 @@ mod tokenisation {
             while let Some(c) = self.peek_next()
                 && c.is_numeric()
             {
-                self.advance();
+                self.next();
                 number.push(c);
             }
             // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
@@ -67,7 +70,7 @@ mod tokenisation {
             number.parse().unwrap()
         }
         /// See the next char to be parsed, or None if the current char is the last char.
-        fn peek_next(&self) -> Option<char> {
+        fn peek_next(&self) -> Option<&char> {
             self.chars.peekable().peek()
         }
     }
@@ -87,7 +90,7 @@ mod tokenisation {
         #[test]
         fn parse_digits() {
             let mut cursor = Cursor::new("123");
-            let first = cursor.advance().unwrap();
+            let first = cursor.next().unwrap();
             assert_eq!(cursor.eat_digits(first), 123);
         }
         #[test]

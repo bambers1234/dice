@@ -33,7 +33,7 @@ impl Roll {
         }
     }
     fn roll(&self) -> u32 {
-        let res = 0;
+        let mut res = 0;
         for i in 0..self.number_to_roll {
             res += random_range(1..=self.number_of_sides)
         }
@@ -65,6 +65,6 @@ mod tests {
     #[test]
     fn roll() {
         let dice = parse_dice_notation("1d6").unwrap();
-        assert!((1..=6).contains(dice.roll));
+        assert!((1..=6).contains(&dice.roll()));
     }
 }

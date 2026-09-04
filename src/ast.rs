@@ -1,4 +1,4 @@
-use crate::tokens::Token::{self, *};
+use crate::tokens::tokenisation::Token::{self, *};
 use crate::errors::SyntaxError;
 trait Node {
     fn walk(&self);
@@ -16,8 +16,8 @@ struct Number {
 struct Ast<T: Node> {
     first_node: T,
 }
-impl<T> Ast<T> {
-    fn new<T: Node>(first_node: T) {
+impl<T: Node> Ast<T> {
+    fn new(first_node: T) -> Ast<T> {
         Ast {
             first_node
         }
@@ -25,7 +25,7 @@ impl<T> Ast<T> {
 }
 pub fn generate_ast<T: Iterator<Item=Token>>(tokens: T) -> Result<Ast, SyntaxError>{
     let tree = 
-    for token in tokens.iter() {
+    for token in tokens. {
         match token {
             DiceRollInvokation => todo!(),
             Number => todo!(),
