@@ -1,7 +1,7 @@
 /// Turn a given input string into a sequence of commands. Not case sensitive.
-pub fn parse(input: &str) {
+pub fn parse(input: &str) -> impl Iterator<Item=Token>{
     let lower = input.to_lowercase();
-    let _tokens = tokenisation::tokenise(lower.trim());
+    tokenisation::tokenise(lower.trim());
 }
 mod tokenisation {
     use Token::*;
