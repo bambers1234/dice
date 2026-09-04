@@ -23,6 +23,12 @@ mod tokenisation {
     struct Cursor<'a> {
         chars: Chars<'a>,
     }
+    impl<'a> Iterator for Cursor<'a> {
+        type Item = char;
+        fn next(&mut self) -> Option<Self::Item> {
+            self.chars.next()
+        }
+    }
     impl<'a> Cursor<'a> {
         fn new(input: &'a str) -> Cursor<'a> {
             Cursor {
@@ -45,9 +51,6 @@ mod tokenisation {
                 _ => Unknown,
             }
         }
-        fn advance(&mut self) -> Option<char> {
-            self.chars.next()
-        }
         /// Continue to consume chars whilst in a digit, then returning the numeric value of those digits.
         fn eat_digits(&mut self, first_digit: char) -> u32 {
             let mut number = String::new();
@@ -65,7 +68,7 @@ mod tokenisation {
         }
         /// See the next char to be parsed, or None if the current char is the last char.
         fn peek_next(&self) -> Option<char> {
-            self.chars.clone().next()
+            self.chars.peekable().peek()
         }
     }
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
