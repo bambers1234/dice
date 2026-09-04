@@ -1,5 +1,6 @@
 #![allow(unused)]
 use crate::errors::SyntaxError;
+use rand::random_range;
 type Amount = u32;
 type Sides = u32;
 /// Given an input string, extract the data about the dice roll from it.
@@ -31,6 +32,13 @@ impl Roll {
             number_to_roll: amount,
         }
     }
+    fn roll(&self) -> u32 {
+        let res = 0;
+        for i in 0..self.number_to_roll {
+            res += random_range(1..=self.number_of_sides)
+        }
+        res
+    }
 }
 #[cfg(test)]
 mod tests {
@@ -53,5 +61,10 @@ mod tests {
     fn parse_dice_nonsense() {
         let notation = "hello";
         let _roll = parse_dice_notation(notation).unwrap();
+    }
+    #[test]
+    fn roll() {
+        let dice = parse_dice_notation("1d6").unwrap();
+        assert!((1..=6).contains(dice.roll));
     }
 }
