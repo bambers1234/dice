@@ -8,8 +8,9 @@ pub fn parse(input: &str) -> Vec<tokenisation::Token>{
 }
 pub mod tokenisation {
     use Token::*;
+    use itertools::{Itertools, PeekingNext};
     use regular_expressions::*;
-    use std::{fmt::format, str::Chars};
+    use std::str::Chars;
     mod regular_expressions {
         //! The patterns to match against to determine the type of token
         // centralised here to be easily changeable if i want the syntax to change
@@ -30,6 +31,20 @@ pub mod tokenisation {
         type Item = char;
         fn next(&mut self) -> Option<Self::Item> {
             self.chars.next()
+        }
+    }
+    impl<'a> PeekingNext for Cursor<'a> {
+        fn peeking_next<F>(&mut self, accept: F) -> Option<Self::Item>
+        where
+            Self: Sized,
+            F: FnOnce(&Self::Item) -> bool
+        {
+            if let Some(item) = self.peekable().peek() {
+                if accept(item) {
+                    return Some(*item)
+                }
+            };
+            None
         }
     }
     impl<'a> Cursor<'a> {
@@ -57,7 +72,7 @@ pub mod tokenisation {
         /// Continue to consume chars whilst in a digit, then returning the numeric value of those digits.
         fn eat_digits(&mut self, first_digit: char) -> u32 {
             let mut number = String::from(first_digit);
-            self.take_while(|ele|ele.is_numeric()).for_each(|c|number.push(c));
+            self.peeking_take_while(|ch|ch.is_numeric()).for_each(|ch|number.push(ch));
             // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
             // so all chars are certain to be digits.
             #[allow(clippy::unwrap_used)]
@@ -65,7 +80,7 @@ pub mod tokenisation {
         }
         fn unknown(&mut self, first_character: char) -> String {
             let mut pat = String::from(first_character);
-            self.take_while(|ch|!ch.is_whitespace() && !(*ch == END_OF_INPUT))
+            self.peeking_take_while(|ch|!ch.is_whitespace() && !(*ch == END_OF_INPUT))
                 .for_each(|ch|pat.push(ch));
             pat
         }
@@ -101,7 +116,13 @@ pub mod tokenisation {
         }
         #[test]
         fn get_dice_tokens() {
-            let mut tokens = tokenise("1d6\n");
+            let tokens: Vec<Token> = tokenise("1d6\n").collect();
+            // debug
+            println!("{}", tokens.len());
+            for i in 0..tokens.len() {
+                println!("{:?}", tokens.iter().nth(i))
+            } 
+            let mut tokens = tokens.into_iter();
             assert_eq!(tokens.next().unwrap(), Number { value: 1 });
             assert_eq!(tokens.next().unwrap(), DiceRollInvokation);
             assert_eq!(tokens.next().unwrap(), Number { value: 6 });

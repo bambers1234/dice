@@ -23,6 +23,7 @@ impl<T: Node> Ast<T> {
         }
     }
 }
+/*
 pub fn generate_ast<T: Iterator<Item=Token>>(tokens: T) -> Result<Ast, SyntaxError>{
     let tree = 
     for token in tokens {
@@ -34,4 +35,5 @@ pub fn generate_ast<T: Iterator<Item=Token>>(tokens: T) -> Result<Ast, SyntaxErr
         }
     };
 }
+    */
 
