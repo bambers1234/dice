@@ -58,20 +58,11 @@ pub mod tokenisation {
         fn eat_digits(&mut self, first_digit: char) -> u32 {
             let mut number = String::new();
             number.push(first_digit);
-            while let Some(c) = self.peek_next()
-                && c.is_numeric()
-            {
-                self.next();
-                number.push(c);
-            }
+            self.take_while(|ele|ele.is_numeric()).for_each(|c|number.push(c));
             // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
             // so all chars are certain to be digits.
             #[allow(clippy::unwrap_used)]
             number.parse().unwrap()
-        }
-        /// See the next char to be parsed, or None if the current char is the last char.
-        fn peek_next(&self) -> Option<&char> {
-            self.chars.peekable().peek()
         }
     }
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]

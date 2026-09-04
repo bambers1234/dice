@@ -25,10 +25,11 @@ impl<T: Node> Ast<T> {
 }
 pub fn generate_ast<T: Iterator<Item=Token>>(tokens: T) -> Result<Ast, SyntaxError>{
     let tree = 
-    for token in tokens. {
+    for token in tokens {
         match token {
+            End => todo!(),
             DiceRollInvokation => todo!(),
-            Number => todo!(),
+            Token::Number {value} => todo!(),
             Unknown => return Err(SyntaxError::new(token)),
         }
     }
