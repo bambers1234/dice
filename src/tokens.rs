@@ -9,7 +9,7 @@ pub fn parse(input: &str) -> Vec<tokenisation::Token>{
 pub mod tokenisation {
     use Token::*;
     use regular_expressions::*;
-    use std::str::Chars;
+    use std::{fmt::format, str::Chars};
     mod regular_expressions {
         //! The patterns to match against to determine the type of token
         // centralised here to be easily changeable if i want the syntax to change
@@ -74,6 +74,16 @@ pub mod tokenisation {
         // only positive ints are supported
         Number { value: u32 },
         Unknown,
+    }
+    impl ToString for Token {
+        fn to_string(&self) -> String {
+            match self {
+                End => String::from("End of input"),
+                DiceRollInvokation => format!("Dice roll invokation: {}", ROLL_INVOKATION),
+                Number { value } => format!("Numeric literal '{}'", value),
+                Unknown => String::from("Unknown token"),
+            }
+        }
     }
     #[cfg(test)]
     mod tests {
