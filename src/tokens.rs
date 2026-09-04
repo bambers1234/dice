@@ -51,21 +51,26 @@ pub mod tokenisation {
                 ROLL_INVOKATION => DiceRollInvokation,
                 END_OF_INPUT => End,
                 // symbol not in regular language, hence invalid
-                _ => Unknown,
+                c@ _ => Unknown {pat: self.unknown(c)},
             }
         }
         /// Continue to consume chars whilst in a digit, then returning the numeric value of those digits.
         fn eat_digits(&mut self, first_digit: char) -> u32 {
-            let mut number = String::new();
-            number.push(first_digit);
+            let mut number = String::from(first_digit);
             self.take_while(|ele|ele.is_numeric()).for_each(|c|number.push(c));
             // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
             // so all chars are certain to be digits.
             #[allow(clippy::unwrap_used)]
             number.parse().unwrap()
         }
+        fn unknown(&mut self, first_character: char) -> String {
+            let mut pat = String::from(first_character);
+            self.take_while(|ch|!ch.is_whitespace() && !(*ch == END_OF_INPUT))
+                .for_each(|ch|pat.push(ch));
+            pat
+        }
     }
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    #[derive(Clone, Debug, PartialEq, Eq)]
     /// The possible operable token types.
     pub enum Token {
         End,
@@ -73,15 +78,15 @@ pub mod tokenisation {
         DiceRollInvokation,
         // only positive ints are supported
         Number { value: u32 },
-        Unknown,
+        Unknown {pat: String},
     }
     impl ToString for Token {
         fn to_string(&self) -> String {
             match self {
                 End => String::from("End of input"),
-                DiceRollInvokation => format!("Dice roll invokation: {}", ROLL_INVOKATION),
+                DiceRollInvokation => format!("Dice roll invokation: '{}", ROLL_INVOKATION),
                 Number { value } => format!("Numeric literal '{}'", value),
-                Unknown => String::from("Unknown token"),
+                Unknown{pat} => format!("Unknown token '{}'", pat),
             }
         }
     }
@@ -105,10 +110,7 @@ pub mod tokenisation {
         #[test]
         fn unknown_token() {
             let mut tokens = tokenise("blah\n");
-            assert_eq!(tokens.next().unwrap(), Unknown);
-            assert_eq!(tokens.next().unwrap(), Unknown);
-            assert_eq!(tokens.next().unwrap(), Unknown);
-            assert_eq!(tokens.next().unwrap(), Unknown);
+            assert_eq!(tokens.next().unwrap(), Unknown { pat: String::from("blah")});
             assert!(tokens.next().is_none());
         }
     }

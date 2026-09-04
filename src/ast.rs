@@ -30,8 +30,8 @@ pub fn generate_ast<T: Iterator<Item=Token>>(tokens: T) -> Result<Ast, SyntaxErr
             End => todo!(),
             DiceRollInvokation => todo!(),
             Token::Number {value} => todo!(),
-            Unknown => return Err(SyntaxError::new(token)),
+            Unknown{..} => return Err(SyntaxError::new(token.to_string().as_str())),
         }
-    }
+    };
 }
 
