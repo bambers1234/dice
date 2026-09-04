@@ -8,6 +8,6 @@ fn main() {
         // keep retrying until stdin works
         // risk of infinite loop?
         while std::io::stdin().read_line(&mut input).is_err() {};
-        tokens::parse(&input);
+        let tokens = tokens::parse(&input);
     }
 }
