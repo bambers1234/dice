@@ -4,9 +4,7 @@ pub fn parse(input: &str) -> Vec<tokenisation::Token>{
     // so the tokenised string is used after the function returns
     // And does not live long enough
     // Unless we consume the iterator to produce a Vec, forcing it to completely drain before returning
-    let mut trimmed = String::from(input.to_lowercase().trim());
-    // add frontmatter to buffer the peekable iterator consuming the first item
-    trimmed.push(' ');
+    let trimmed = String::from(input.to_lowercase().trim());
     tokenisation::tokenise(&trimmed).collect()
 }
 pub mod tokenisation {
@@ -41,45 +39,44 @@ pub mod tokenisation {
     impl<'a> Cursor<'a> {
         fn new(input: &'a str) -> Cursor<'a> {
             // peek() consumes the first and only the first element
-            let mut cursor = Cursor {
+            Cursor {
                 chars: input.chars().peekable(),
-            };
-            // consume the frontmatter, it no longer consumes when peeking
-            cursor.chars.peek();
-            cursor
+            }
         }
         fn advance_token(&mut self) -> Token {
             let Some(char) = self.chars.peek() else {
                 return End;
             };
             // PROBLEM: ASCII only
-            // PROBLEM: consumes additional item in peeking_take_while
-            // SOLUTION ALGORITHM: recognise the next char is a number, then consume it with peeking_take_while
-            let token = match char.to_ascii_lowercase() {
+            // remember that every single function to eat chars must actually eat the chars it turns into tokens, 
+            // whether through peeking_take_while() or next()
+            // otherwise a character will be repeatead
+            #[allow(clippy::unwrap_used)]
+            // the check that it's not None is done above
+            let token = match char.to_lowercase().next().unwrap() {
                 // numeric literal
                 c @ '0'..='9' => Number {
                     value: self.eat_digits(),
                 },
-                ROLL_INVOKATION => DiceRollInvokation,
-                END_OF_INPUT => End,
+                'd' => {self.next(); DiceRollInvokation},
+                '\n' => End,
                 // symbol not in regular language, hence invalid
-                c@ _ => Unknown {pat: self.unknown(c)},
+                c@ _ => Unknown {pat: self.unknown()},
             };
-            self.next();
             token
         }
         /// Continue to consume chars whilst in a digit, then returning the numeric value of those digits.
         fn eat_digits(&mut self) -> u32 {
             let mut number = String::new();
-            self.peekable().peeking_take_while(|ch|ch.is_numeric()).for_each(|ch|number.push(ch));
+            self.chars.peeking_take_while(|ch|ch.is_numeric()).for_each(|ch|number.push(ch));
             // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
             // so all chars are certain to be digits.
             #[allow(clippy::unwrap_used)]
             number.parse::<u32>().unwrap()
         }
-        fn unknown(&mut self, first_character: char) -> String {
-            let mut pat = String::from(first_character);
-            self.peekable().peeking_take_while(|ch|!ch.is_whitespace() && !(*ch == END_OF_INPUT))
+        fn unknown(&mut self) -> String {
+            let mut pat = String::new();
+            self.chars.peeking_take_while(|ch|!ch.is_whitespace() && !(*ch == END_OF_INPUT))
                 .for_each(|ch|pat.push(ch));
             pat
         }
