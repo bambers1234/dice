@@ -44,6 +44,7 @@ pub mod tokenisation {
             }
         }
         fn advance_token(&mut self) -> Token {
+            // no more characters = finished
             let Some(char) = self.chars.peek() else {
                 return End;
             };
@@ -52,16 +53,16 @@ pub mod tokenisation {
             // whether through peeking_take_while() or next()
             // otherwise a character will be repeatead
             #[allow(clippy::unwrap_used)]
-            // the check that it's not None is done above
+            // the check that it's not None is done above, unwrap is safe
             let token = match char.to_lowercase().next().unwrap() {
                 // numeric literal
-                c @ '0'..='9' => Number {
+                '0'..='9' => Number {
                     value: self.eat_digits(),
                 },
                 'd' => {self.next(); DiceRollInvokation},
                 '\n' => End,
                 // symbol not in regular language, hence invalid
-                c@ _ => Unknown {pat: self.unknown()},
+                _ => Unknown {pat: self.unknown()},
             };
             token
         }

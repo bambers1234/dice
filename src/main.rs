@@ -3,6 +3,8 @@ mod dice;
 mod errors;
 mod tokens;
 mod ast;
+mod command;
+
 fn main() {
     loop {
         let mut input = String::new();
