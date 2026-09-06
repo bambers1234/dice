@@ -9,15 +9,9 @@ pub fn parse(input: &str) -> Vec<tokenisation::Token>{
 }
 pub mod tokenisation {
     use Token::*;
+    use crate::chars::EOF;
     use itertools::Itertools;
-    use regular_expressions::*;
     use std::{iter::Peekable, str::Chars};
-    mod regular_expressions {
-        //! The patterns to match against to determine the type of token
-        // centralised here to be easily changeable if i want the syntax to change
-        pub const ROLL_INVOKATION: char = 'd';
-        pub const END_OF_INPUT: char = '\n';
-    }
     pub fn tokenise(input: &str) -> impl Iterator<Item = Token> {
         let mut cursor = Cursor::new(input);
         std::iter::from_fn(move || {
@@ -60,7 +54,7 @@ pub mod tokenisation {
                     value: self.eat_digits(),
                 },
                 'd' => {self.next(); DiceRollInvokation},
-                '\n' => End,
+                EOF => End,
                 // symbol not in regular language, hence invalid
                 _ => Unknown {pat: self.unknown()},
             };
@@ -77,7 +71,7 @@ pub mod tokenisation {
         }
         fn unknown(&mut self) -> String {
             let mut pat = String::new();
-            self.chars.peeking_take_while(|ch|!ch.is_whitespace() && !(*ch == END_OF_INPUT))
+            self.chars.peeking_take_while(|ch|!ch.is_whitespace() && !(*ch == EOF))
                 .for_each(|ch|pat.push(ch));
             pat
         }
@@ -96,7 +90,7 @@ pub mod tokenisation {
         fn to_string(&self) -> String {
             match self {
                 End => String::from("End of input"),
-                DiceRollInvokation => format!("Dice roll invokation: '{}", ROLL_INVOKATION),
+                DiceRollInvokation => format!("Dice roll invokation: '{}", 'd'),
                 Number { value } => format!("Numeric literal '{}'", value),
                 Unknown{pat} => format!("Unknown token '{}'", pat),
             }
