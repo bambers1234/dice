@@ -1,6 +1,7 @@
 #![warn(clippy::unwrap_used)]
 
-use crate::tokens::tokenisation::tokenise;
+use std::sync::OnceLock;
+
 mod dice;
 mod errors;
 mod tokens;
@@ -8,16 +9,21 @@ mod ast;
 mod cli;
 mod bytecode;
 mod operator;
+
+static INPUT: OnceLock<String> = OnceLock::new();
 fn main() {
     loop {
-        let mut input = String::new();
         // keep retrying until stdin works
         // risk of infinite loop?
-        while std::io::stdin().read_line(&mut input).is_err() {};
-        let tokens = tokens::parse(&input);
+        INPUT.get_or_init(|| input());
+        compile(INPUT.get().unwrap());
     }
 }
-pub fn compile(input: String) {
-    let tokens = tokenise(&input);
-
+fn compile(input: &'static str) {
+    let tokens = tokens::tokenise(input);
+}
+fn input() -> String {
+    let mut buf = String::new();
+    while std::io::stdin().read_line(&mut buf).is_err() {};
+    buf
 }

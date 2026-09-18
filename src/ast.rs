@@ -1,6 +1,6 @@
 //! Produce an manipulate an abstract syntax tree
 use std::iter::Peekable;
-use crate::tokens::tokenisation::Token::{self, *};
+use crate::tokens::Token::{self, *};
 use Node::*;
 use crate::operator::Operator;
 
@@ -20,23 +20,17 @@ impl Node {
     }
 }
 /// Produce an expression tree from a given token supplier, returning the root node. 
-/// ## Panics: if there is a syntax error
+/// ## Panics
+/// If there is a syntax error in the input
 pub fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u32) -> Node {
     // use a Pratt operator-precedence parser
     let head_token = lexer.next().expect("SYNTAX ERROR: expected token, found end of input");
     let mut left = null_denotation(lexer, head_token);
     loop {
-        if let Some(next) = lexer.peek() {
-            if let Token::Operator { op_type: op } = next {
-                if op.precedence() > precedence {
-                    let curr_token = lexer.next().unwrap(); // None = EOF
-                    left = left_denotation(lexer, left, curr_token);
-                } else {
-                    break
-                }
-            } else {
-                break
-            }
+        // infix tokens MUST be operators in all scenarios for a Pratt Parser (Pratt parser can only do operators)
+        if let Some(next) = lexer.peek() && let Token::Operator { op_type: op} = next && op.precedence() > precedence {
+            let curr_token = lexer.next().unwrap(); // unwrap is safe- checked above
+            left = left_denotation(lexer, left, curr_token);
         } else {
             break; // None = EOF, go straight to returning Node
         }

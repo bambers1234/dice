@@ -10,14 +10,14 @@ fn parse_dice_notation(notation: &str) -> Result<Roll, SyntaxError> {
     let mut parts = notation.splitn(2, 'd');
     let amount: Amount = parts
         .next()
-        .ok_or_else(|| SyntaxError::new(notation))?
+        .ok_or_else(|| SyntaxError::new_tokenising_error(notation))?
         .parse()
-        .map_err(|_| SyntaxError::new(notation))?;
+        .map_err(|_| SyntaxError::new_tokenising_error(notation))?;
     let sides: Sides = parts
         .next()
-        .ok_or_else(|| SyntaxError::new(notation))?
+        .ok_or_else(|| SyntaxError::new_tokenising_error(notation))?
         .parse()
-        .map_err(|_| SyntaxError::new(notation))?;
+        .map_err(|_| SyntaxError::new_tokenising_error(notation))?;
     Ok(Roll::new(amount, sides))
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
