@@ -1,19 +1,23 @@
+use std::{iter::Peekable, sync::RwLock};
+static INPUT: RwLock<String> = RwLock::new(String::new());
 /// Turn a given input string into a sequence of commands. Not case sensitive.
-pub fn parse(input: &str) -> Vec<tokenisation::Token>{
+pub fn parse() -> Peekable<impl Iterator<Item = tokenisation::Token>>{
     // vec is annoying to need, but iterators are lazy
     // so the tokenised string is used after the function returns
     // And does not live long enough
     // Unless we consume the iterator to produce a Vec, forcing it to completely drain before returning
-    let trimmed = String::from(input.to_lowercase().trim());
-    tokenisation::tokenise(&trimmed).collect()
+    let mut input = INPUT.write().unwrap();
+    *input = input.trim().to_lowercase();
+    tokenisation::tokenise().peekable()
 }
 pub mod tokenisation {
     use Token::*;
-    use crate::chars::EOF;
+    use crate::{operator::Operator::{self, *}, tokens::INPUT};
     use itertools::Itertools;
     use std::{iter::Peekable, str::Chars};
-    pub fn tokenise(input: &str) -> impl Iterator<Item = Token> {
-        let mut cursor = Cursor::new(input);
+    pub fn tokenise() -> impl Iterator<Item = Token> {
+        let input = INPUT.read().unwrap();
+        let mut cursor = Cursor::new(*&input.as_str());
         std::iter::from_fn(move || {
             let token = cursor.advance_token();
             if let End = token { None } else { Some(token) }
@@ -53,7 +57,7 @@ pub mod tokenisation {
                 '0'..='9' => Number {
                     value: self.eat_digits(),
                 },
-                'd' => {self.next(); DiceRollInvokation},
+                'd' => {self.next(); Token::Operator { op_type: Dice }},
                 EOF => End,
                 // symbol not in regular language, hence invalid
                 _ => Unknown {pat: self.unknown()},
@@ -80,19 +84,18 @@ pub mod tokenisation {
     /// The possible operable token types.
     pub enum Token {
         End,
-        // 'd'
-        DiceRollInvokation,
         // only positive ints are supported
         Number { value: u32 },
+        Operator {op_type: Operator },
         Unknown {pat: String},
     }
     impl ToString for Token {
         fn to_string(&self) -> String {
             match self {
                 End => String::from("End of input"),
-                DiceRollInvokation => format!("Dice roll invokation: '{}", 'd'),
                 Number { value } => format!("Numeric literal '{}'", value),
                 Unknown{pat} => format!("Unknown token '{}'", pat),
+                Token::Operator {op_type: op} => format!("Operator: {}", op.to_string()),
             }
         }
     }

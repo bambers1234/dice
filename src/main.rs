@@ -5,10 +5,9 @@ mod dice;
 mod errors;
 mod tokens;
 mod ast;
-mod command;
 mod cli;
-mod chars;
 mod bytecode;
+mod operator;
 fn main() {
     loop {
         let mut input = String::new();
