@@ -2,7 +2,7 @@
 use std::iter::Peekable;
 use crate::tokens::tokenisation::Token::{self, *};
 use Node::*;
-use crate::operator::Operator::{self, *};
+use crate::operator::Operator;
 
 #[derive(Clone, Debug)]
 enum Node {
@@ -41,10 +41,10 @@ fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u32) -> 
 // not defined as method on Token because it clearly belongs in parser, not tokenisation
 // these basically convert Token to Node by adding parameters
 /// Given a token at the start of an expression, return the corresponding Node to start the expression
-fn null_denotation(lexer: &mut Peekable<impl Iterator<Item = Token>>,token: Token) -> Node {
+fn null_denotation(_lexer: &mut Peekable<impl Iterator<Item = Token>>, token: Token) -> Node {
     match token {
         Number { value } => NumberLiteral { val: value },
-        _ => todo!("syntax error: no others can be heads of expressions")
+        _ => panic!("SYNTAX ERROR: {} cannot start an expression", token.to_string())
     }
 }
 // it makes sense for each node to own its parameters
@@ -53,6 +53,6 @@ fn null_denotation(lexer: &mut Peekable<impl Iterator<Item = Token>>,token: Toke
 fn left_denotation(lexer: &mut Peekable<impl Iterator<Item = Token>>, left: Node, token: Token) -> Node {
     match token {
         Token::Operator {op_type: op} => Node::from_op(lexer, op, left),
-        _ => todo!("no others have tail handlers yet")
+        _ => panic!("SYNTAX ERROR: {} cannot appear within an expression", token.to_string())
     }
 }
