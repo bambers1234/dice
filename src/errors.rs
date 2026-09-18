@@ -1,26 +1,29 @@
-use std::fmt::{self, write};
+use std::fmt;
 use std::error::Error;
 
 #[derive(Clone, Debug)]
 pub enum SyntaxError {
     Tokenising { token_stream: String },
-    Parsing { },
+    Parsing { token_stream: String },
 }
 impl SyntaxError {
     pub fn new_tokenising_error(input: &str) -> Self {
         Self::Tokenising { token_stream: String::from(input) }
     }
-    pub fn new_parse_error() -> Self {
-
+    pub fn new_parse_error(erroneous_tokens: &str) -> Self {
+        Self::Parsing { token_stream: String::from(erroneous_tokens) }
     }
 }
 impl fmt::Display for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "SYNTAX ERROR: {} is not valid syntax.",
-            self.token_stream
-        )
+        match self {
+            Self::Tokenising { token_stream } => {
+                write!(f, "SYNTAX ERROR: unknown pattern at {}", token_stream)
+            },
+            Self::Parsing { token_stream } => {
+                write!(f, "SYNTAX ERROR: {} cannot be in that place in an expression", token_stream)
+            },
+        }
     }
 }
 impl Error for SyntaxError {}
