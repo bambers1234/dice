@@ -1,4 +1,4 @@
-//! Use a Pratt parser to produce an expression tree for the tokens.
+//! Produce an manipulate an abstract syntax tree
 use std::iter::Peekable;
 use crate::tokens::tokenisation::Token::{self, *};
 use Node::*;
@@ -19,21 +19,26 @@ impl Node {
         Op { l_param: Box::new(l_param), op_type: op, r_param: Box::new(parse(lexer, op.precedence())) }
     }
 }
-/// Use a Pratt operator-precedence parser to generate an expression tree from a token supplier
-fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u32) -> Node {
-    let head_token = lexer.next().unwrap(); // None = EOF
+/// Produce an expression tree from a given token supplier, returning the root node. 
+/// ## Panics: if there is a syntax error
+pub fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u32) -> Node {
+    // use a Pratt operator-precedence parser
+    let head_token = lexer.next().expect("SYNTAX ERROR: expected token, found end of input");
     let mut left = null_denotation(lexer, head_token);
     loop {
-        let next = lexer.peek().unwrap();
-        if let Token::Operator { op_type: op } = next {
-            if op.precedence() > precedence {
-                let curr_token = lexer.next().unwrap(); // None = EOF
-                left = left_denotation(lexer, left, curr_token);
+        if let Some(next) = lexer.peek() {
+            if let Token::Operator { op_type: op } = next {
+                if op.precedence() > precedence {
+                    let curr_token = lexer.next().unwrap(); // None = EOF
+                    left = left_denotation(lexer, left, curr_token);
+                } else {
+                    break
+                }
             } else {
                 break
             }
         } else {
-            break
+            break; // None = EOF, go straight to returning Node
         }
     }
     left
