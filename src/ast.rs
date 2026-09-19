@@ -1,6 +1,7 @@
 //! Produce and manipulate an abstract syntax tree
+use core::panic;
 use std::iter::Peekable;
-use crate::tokens::Token::{self, *};
+use crate::{errors::CannotInline, tokens::Token::{self, *}};
 use Node::*;
 use crate::operator::Operator;
 
@@ -9,14 +10,38 @@ pub enum Node {
     // leaf
     NumberLiteral{ val: u32 },
     // internal node has subtree either side
+    // includes dice rolls
     Op{ l_param: Box<Node>, op_type: Operator, r_param: Box<Node> },
-    // although RollInvokation is very similar to an operator, unlike ops, it cannot ever be compile-time evaluated
-    RollInvokation{ amount: Box<Node>, sides: Box<Node>}
 }
 impl Node {
     /// Convert a given Operator into the corresponding expression tree node
     fn from_op(lexer: &mut Peekable<impl Iterator<Item = Token>>, op: Operator, l_param: Node) -> Node {
         Op { l_param: Box::new(l_param), op_type: op, r_param: Box::new(parse(lexer, op.precedence())) }
+    }
+    /// Traverse and modify an expression tree in-place to inline constants.
+    pub fn inline(&mut self) -> Result<(), CannotInline> {
+        // returns () because it modifies in place
+        // if both params can be inlined, self = literal
+        match self {
+            NumberLiteral { val } => Ok(()),
+            Op { l_param, op_type, r_param } => {
+                // self = literal
+                // val = perform Op
+                l_param.inline()?; // modifies IN PLACE- this Op's params change
+                r_param.inline()?; // if they can't be, ? returns Err
+                // extract the inner u32
+                // panic is safe, inline()? ensures both params are NumberLiteral by this point
+                let NumberLiteral { val: l_val } = **l_param else {
+                    panic!("This should be unreachable, as inline()? ensures both params are NumberLiteral by this point");
+                };
+                let NumberLiteral { val: r_val } = **r_param else {
+                    panic!("This should be unreachable, as inline()? ensures both params are NumberLiteral by this point");
+                };
+                // self was Op, now condensed
+                *self = NumberLiteral { val: op_type.calculate(l_val, r_val)? };
+                Ok(())
+            }
+        }
     }
 }
 /// Produce an expression tree from a given token supplier, returning the root node. 
@@ -85,7 +110,83 @@ mod tests {
         //     2  Mul
         //        / \
         //       3   5
-        assert!(root == Op { l_param: Box::new(NumberLiteral { val: 2 }), op_type: Add, 
-            r_param: Box::new(Op { l_param: Box::new(NumberLiteral { val: 3 }), op_type: Mul, r_param: Box::new(NumberLiteral { val: 5 }) }) })
+        assert!(root == Op { 
+            l_param: Box::new(NumberLiteral { val: 2 }), 
+            op_type: Add, 
+            r_param: Box::new(Op { 
+                l_param: Box::new(NumberLiteral { val: 3 }), 
+                op_type: Mul, 
+                r_param: Box::new(NumberLiteral { val: 5 }) 
+            }) 
+        })
+    }
+    #[test]
+    fn inline() {
+        let mut tokens = tokenise("2+3*4");
+        //      Add
+        //      / \
+        //     2  Mul
+        //        / \
+        //       3   4
+        let mut root = parse(&mut tokens, 0);
+        root.inline().unwrap();
+        assert!(root == NumberLiteral { val: 14 })
+    }
+    #[test]
+    fn dice_op() {
+        let mut lexer = tokenise("1d6+1");
+        //      Add
+        //      / \
+        //    Dice 1
+        //    /  \
+        //   1    6
+        let root = parse(&mut lexer, 0);
+        assert!(root == Op {
+            l_param: Box::new(Op { 
+                l_param: Box::new(NumberLiteral { val: 1 }), 
+                op_type: Dice, 
+                r_param: Box::new(NumberLiteral { val: 6 })
+            }), 
+            op_type: Add, 
+            r_param: Box::new(NumberLiteral { val: 1 }) 
+        });
+    }
+    #[test]
+    fn partial_inline() {
+        let mut lexer = tokenise("1d6+1*2");
+        //      Add
+        //     /   \
+        //  Dice    Mul
+        //  /  \    / \
+        // 1    6  1   2
+        let mut root = parse(&mut lexer, 0);
+        assert_eq!(root, Op {
+            l_param: Box::new(Op { 
+                l_param: Box::new(NumberLiteral { val: 1 }), 
+                op_type: Dice, 
+                r_param: Box::new(NumberLiteral { val: 6 }),
+            }),
+            op_type: Add,
+            r_param: Box::new(Op {
+                l_param: Box::new(NumberLiteral { val: 1 }),
+                op_type: Mul,
+                r_param: Box::new(NumberLiteral { val: 2 }),
+            })
+        });
+        assert!(root.inline().is_err());
+        //      Add
+        //      / \
+        //   Dice  2
+        //   /  \
+        //  1    6
+        assert_eq!(root, Op {
+            l_param: Box::new(Op {
+                l_param: Box::new(NumberLiteral { val: 1 }),
+                op_type: Dice,
+                r_param: Box::new(NumberLiteral { val: 6 }),
+            }),
+            op_type: Add,
+            r_param: Box::new(NumberLiteral { val: 2 }),
+        })
     }
 }

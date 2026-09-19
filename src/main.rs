@@ -2,6 +2,8 @@
 
 use std::sync::OnceLock;
 
+use crate::ast::Node;
+
 mod dice;
 mod errors;
 mod tokens;
@@ -21,7 +23,8 @@ fn main() {
 }
 fn compile(input: &'static str) {
     let mut tokens = tokens::tokenise(input);
-    let ast = ast::parse(&mut tokens, 0);
+    let mut ast = ast::parse(&mut tokens, 0);
+    let _ = ast.inline(); // let _ bc it doesn't matter if not everything can be inlined
 }
 /// Transform an input &str to remove leading and trailing whitespace and switch to lowercase
 fn sanitise<T: ToString>(input: T) -> String {
