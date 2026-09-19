@@ -1,4 +1,4 @@
-//! Produce an manipulate an abstract syntax tree
+//! Produce and manipulate an abstract syntax tree
 use std::iter::Peekable;
 use crate::tokens::Token::{self, *};
 use Node::*;
