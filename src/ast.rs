@@ -1,5 +1,4 @@
 //! Produce and manipulate an abstract syntax tree
-use core::panic;
 use std::iter::Peekable;
 use crate::{errors::CannotInline, tokens::Token::{self, *}};
 use Node::*;
@@ -27,10 +26,13 @@ impl Node {
             Op { l_param, op_type, r_param } => {
                 // self = literal
                 // val = perform Op
-                l_param.inline()?; // modifies IN PLACE- this Op's params change
-                r_param.inline()?; // if they can't be, ? returns Err
+                let l_inlined = l_param.inline(); // modifies IN PLACE- this Op's params change
+                let r_inlined = r_param.inline(); // if they can't be, ? returns Err
+                // return here because otherwise not both params will attempt inlining, but if either is Err then this node must not be inlined
+                l_inlined?;
+                r_inlined?;
                 // extract the inner u32
-                // panic is safe, inline()? ensures both params are NumberLiteral by this point
+                // panic is safe, ? ensures both params are NumberLiteral by this point
                 let NumberLiteral { val: l_val } = **l_param else {
                     panic!("This should be unreachable, as inline()? ensures both params are NumberLiteral by this point");
                 };
@@ -141,7 +143,7 @@ mod tests {
         //    /  \
         //   1    6
         let root = parse(&mut lexer, 0);
-        assert!(root == Op {
+        assert_eq!(root, Op {
             l_param: Box::new(Op { 
                 l_param: Box::new(NumberLiteral { val: 1 }), 
                 op_type: Dice, 
@@ -179,6 +181,7 @@ mod tests {
         //   Dice  2
         //   /  \
         //  1    6
+        // none of the tree is being inlined- it isn't changing
         assert_eq!(root, Op {
             l_param: Box::new(Op {
                 l_param: Box::new(NumberLiteral { val: 1 }),

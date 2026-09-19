@@ -15,10 +15,11 @@ impl Operator {
         }
     }
     pub fn precedence(&self) -> u32 {
+        // higher precedence = becomes a parameter
         match self {
-            Add => 2,
-            Mul => 3,
-            Dice => 1,
+            Add => 1,
+            Mul => 2,
+            Dice => 3,
         }
     }
 }
