@@ -38,7 +38,6 @@ impl<'a> Cursor<'a> {
         let Some(char) = self.chars.peek() else {
             return End;
         };
-        // PROBLEM: ASCII only
         // remember that every single function to eat chars must actually eat the chars it turns into tokens, 
         // whether through peeking_take_while() or next()
         // otherwise a character will be repeatead
@@ -50,8 +49,9 @@ impl<'a> Cursor<'a> {
                 value: self.eat_digits(),
             },
             'd' => {self.next(); Token::Operator { op_type: Dice }},
-            EOF => End,
-            // symbol not in regular language, hence invalid
+            ';' => {self.next(); End},
+            '+' => {self.next(); Token::Operator { op_type: Add }},
+            '*' => {self.next(); Token::Operator { op_type: Mul }},
             _ => Unknown {pat: self.unknown()},
         };
         token
@@ -112,6 +112,27 @@ mod tests {
         let mut tokens = tokenise("blah\n");
         assert_eq!(tokens.next().unwrap(), Unknown { pat: String::from("blah")});
         assert!(tokens.next().is_none());
+    }
+    #[test]
+    fn add() {
+        let mut tokens = tokenise("1+1;");
+        assert_eq!(tokens.next().unwrap(), Number { value: 1 });
+        assert_eq!(tokens.next().unwrap(), Token::Operator { op_type: Add });
+        assert_eq!(tokens.next().unwrap(), Number { value: 1 });
+        assert!(tokens.next().is_none());
+    }
+    #[test]
+    fn mul() {
+        let mut tokens = tokenise("1*1;");
+        assert_eq!(tokens.next().unwrap(), Number { value: 1 });
+        assert_eq!(tokens.next().unwrap(), Token::Operator { op_type: Mul });
+        assert_eq!(tokens.next().unwrap(), Number { value: 1 });
+        assert!(tokens.next().is_none())
+    }
+    #[test]
+    fn end() {
+        let mut tokens = tokenise(";");
+        assert!(tokens.next().is_none())
     }
 }
 
