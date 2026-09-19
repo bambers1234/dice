@@ -109,7 +109,7 @@ mod tests {
     }
     #[test]
     fn unknown_token() {
-        let mut tokens = tokenise("blah\n");
+        let mut tokens = tokenise("blah");
         assert_eq!(tokens.next().unwrap(), Unknown { pat: String::from("blah")});
         assert!(tokens.next().is_none());
     }
