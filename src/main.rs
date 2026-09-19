@@ -2,12 +2,7 @@
 #![warn(clippy::panic)]
 use std::sync::OnceLock;
 
-mod errors;
-mod tokens;
-mod ast;
-mod cli;
-mod bytecode;
-mod operator;
+mod compiler;
 
 static INPUT: OnceLock<String> = OnceLock::new();
 fn main() {

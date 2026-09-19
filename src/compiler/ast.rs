@@ -1,8 +1,8 @@
 //! Produce and manipulate an abstract syntax tree
 use std::iter::Peekable;
-use crate::{errors::CannotInline, tokens::Token::{self, *}};
+use super::{errors::CannotInline, tokens::Token::{self, *}};
 use Node::*;
-use crate::operator::Operator;
+use super::operator::Operator;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Node {
