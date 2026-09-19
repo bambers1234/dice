@@ -1,10 +1,7 @@
 #![warn(clippy::unwrap_used)]
-
+#![warn(clippy::panic)]
 use std::sync::OnceLock;
 
-use crate::ast::Node;
-
-mod dice;
 mod errors;
 mod tokens;
 mod ast;
@@ -18,6 +15,8 @@ fn main() {
         // keep retrying until stdin works
         // risk of infinite loop?
         INPUT.get_or_init(|| sanitise(input()));
+        #[allow(clippy::unwrap_used)]
+        // unwrap is safe- INPUT initialised above
         compile(INPUT.get().unwrap());
     }
 }

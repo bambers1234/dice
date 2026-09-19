@@ -67,7 +67,7 @@ impl<'a> Cursor<'a> {
     }
     fn unknown(&mut self) -> String {
         let mut pat = String::new();
-        self.chars.peeking_take_while(|ch|!ch.is_whitespace() && !(*ch == ';'))
+        self.chars.peeking_take_while(|ch|!ch.is_whitespace() && *ch != ';')
             .for_each(|ch|pat.push(ch));
         pat
     }
@@ -81,13 +81,13 @@ pub enum Token {
     Operator {op_type: Operator },
     Unknown {pat: String},
 }
-impl ToString for Token {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            End => String::from("End of input"),
-            Number { value } => format!("Numeric literal '{}'", value),
-            Unknown{pat} => format!("Unknown token '{}'", pat),
-            Token::Operator {op_type: op} => format!("Operator: {}", op.to_string()),
+            End => write!(f, "End of Input"),
+            Number { value } => write!(f, "Numeric literal '{}'", value),
+            Unknown { pat } => write!(f, "Unknown token '{}'", pat),
+            Token::Operator { op_type } => write!(f, "Operator: {}", op_type)
         }
     }
 }

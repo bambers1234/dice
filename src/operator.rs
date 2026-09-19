@@ -23,16 +23,15 @@ impl Operator {
         }
     }
 }
-impl ToString for Operator {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Add => String::from("plus (+)"),
-            Mul => String::from("multiply (*)"),
-            Dice => String::from("dice roll (d)"),
+            Add => write!(f, "plus (+)"),
+            Mul => write!(f, "multiply (*)"),
+            Dice => write!(f, "dice roll (d)"),
         }
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::Operator::*;

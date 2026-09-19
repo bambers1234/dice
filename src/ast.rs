@@ -22,20 +22,20 @@ impl Node {
         // returns () because it modifies in place
         // if both params can be inlined, self = literal
         match self {
-            NumberLiteral { val } => Ok(()),
+            NumberLiteral { val: _ } => Ok(()),
             Op { l_param, op_type, r_param } => {
-                // self = literal
-                // val = perform Op
-                let l_inlined = l_param.inline(); // modifies IN PLACE- this Op's params change
-                let r_inlined = r_param.inline(); // if they can't be, ? returns Err
+                let l_inlined: Result<(), CannotInline> = l_param.inline(); // modifies IN PLACE- this Op's params change
+                let r_inlined: Result<(), CannotInline> = r_param.inline(); // if they can't be, ? returns Err
                 // return here because otherwise not both params will attempt inlining, but if either is Err then this node must not be inlined
                 l_inlined?;
                 r_inlined?;
                 // extract the inner u32
                 // panic is safe, ? ensures both params are NumberLiteral by this point
+                #[allow(clippy::panic)]
                 let NumberLiteral { val: l_val } = **l_param else {
                     panic!("This should be unreachable, as inline()? ensures both params are NumberLiteral by this point");
                 };
+                #[allow(clippy::panic)]
                 let NumberLiteral { val: r_val } = **r_param else {
                     panic!("This should be unreachable, as inline()? ensures both params are NumberLiteral by this point");
                 };
@@ -56,6 +56,7 @@ pub fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u32)
     loop {
         // infix tokens MUST be operators in all scenarios for a Pratt Parser (Pratt parser can only do operators)
         if let Some(next) = lexer.peek() && let Token::Operator { op_type: op} = next && op.precedence() > precedence {
+            #[allow(clippy::unwrap_used)]
             let curr_token = lexer.next().unwrap(); // unwrap is safe- checked above
             left = left_denotation(lexer, left, curr_token);
         } else {
@@ -70,7 +71,8 @@ pub fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u32)
 fn null_denotation(_lexer: &mut Peekable<impl Iterator<Item = Token>>, token: Token) -> Node {
     match token {
         Number { value } => NumberLiteral { val: value },
-        _ => panic!("SYNTAX ERROR: {} cannot start an expression", token.to_string())
+        #[allow(clippy::panic)]
+        _ => panic!("SYNTAX ERROR: {} cannot start an expression", token)
     }
 }
 // it makes sense for each node to own its parameters
@@ -79,7 +81,8 @@ fn null_denotation(_lexer: &mut Peekable<impl Iterator<Item = Token>>, token: To
 fn left_denotation(lexer: &mut Peekable<impl Iterator<Item = Token>>, left: Node, token: Token) -> Node {
     match token {
         Token::Operator {op_type: op} => Node::from_op(lexer, op, left),
-        _ => panic!("SYNTAX ERROR: {} cannot appear within an expression", token.to_string())
+        #[allow(clippy::panic)]
+        _ => panic!("SYNTAX ERROR: {} cannot appear within an expression", token)
     }
 }
 

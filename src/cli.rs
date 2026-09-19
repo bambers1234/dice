@@ -1,4 +1,5 @@
 //! Allow the user to interact with this app via the command line as a shell.
+#![allow(unused)]
 use std::io::stdin;
 use crate::{INPUT, compile};
 /// Create an interactive shell for the user.
@@ -14,6 +15,8 @@ fn create_shell_from_stdin() {
         }
         input
     });
+    #[allow(clippy::unwrap_used)]
+    // unwrap is safe- INPUT was just initialised
     compile(INPUT.get().unwrap());
     // TODO: run bytecode and output
 }
