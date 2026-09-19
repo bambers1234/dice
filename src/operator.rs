@@ -16,9 +16,9 @@ impl Operator {
     }
     pub fn precedence(&self) -> u32 {
         match self {
-            Add => 1,
-            Mul => 2,
-            Dice => 3,
+            Add => 2,
+            Mul => 3,
+            Dice => 1,
         }
     }
 }
@@ -29,5 +29,29 @@ impl ToString for Operator {
             Mul => String::from("multiply (*)"),
             Dice => String::from("dice roll (d)"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Operator::*;
+    #[test]
+    fn calc_add() {
+        assert_eq!(Add.calculate(1, 2).unwrap(), 3);
+    }
+    #[test]
+    fn calc_mul() {
+        assert_eq!(Mul.calculate(1, 2).unwrap(), 2);
+    }
+    #[test]
+    #[should_panic]
+    fn calc_dice() {
+        Dice.calculate(1, 6).unwrap();
+    }
+    #[test]
+    fn strings() {
+        assert_eq!(Add.to_string(), "plus (+)");
+        assert_eq!(Mul.to_string(), "multiply (*)");
+        assert_eq!(Dice.to_string(), "dice roll (d)");
     }
 }

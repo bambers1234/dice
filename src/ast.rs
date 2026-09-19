@@ -5,7 +5,7 @@ use Node::*;
 use crate::operator::Operator;
 
 #[derive(Clone, Debug)]
-enum Node {
+pub enum Node {
     // leaf
     NumberLiteral{ val: u32 },
     // internal node has subtree either side

@@ -20,7 +20,8 @@ fn main() {
     }
 }
 fn compile(input: &'static str) {
-    let tokens = tokens::tokenise(input);
+    let mut tokens = tokens::tokenise(input);
+    let ast = ast::parse(&mut tokens, 0);
 }
 fn input() -> String {
     let mut buf = String::new();
