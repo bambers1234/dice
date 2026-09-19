@@ -4,7 +4,7 @@ use crate::tokens::Token::{self, *};
 use Node::*;
 use crate::operator::Operator;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Node {
     // leaf
     NumberLiteral{ val: u32 },
@@ -53,5 +53,39 @@ fn left_denotation(lexer: &mut Peekable<impl Iterator<Item = Token>>, left: Node
     match token {
         Token::Operator {op_type: op} => Node::from_op(lexer, op, left),
         _ => panic!("SYNTAX ERROR: {} cannot appear within an expression", token.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tokens::tokenise;
+    use crate::operator::Operator::*;
+    use super::*;
+    // relies on tokenising being correct
+    #[test]
+    fn add() {
+        let mut tokens = tokenise("1+1");
+        let root = parse(&mut tokens, 0);
+        assert_eq!(root, Op { l_param: Box::new(NumberLiteral { val: 1 }),
+            op_type: Add, r_param: Box::new(NumberLiteral { val: 1 })});
+    }
+    #[test] 
+    fn mul() {
+        let mut tokens = tokenise("1*1");
+        let root = parse(&mut tokens, 0);
+        assert_eq!(root, Op { l_param: Box::new(NumberLiteral { val: 1 }), 
+            op_type: Mul, r_param: Box::new(NumberLiteral { val: 1 }) });
+    }
+    #[test]
+    fn bidmas() {
+        let mut tokens = tokenise("2+3*5");
+        let root = parse(&mut tokens, 0);
+        //      Add
+        //      / \
+        //     2  Mul
+        //        / \
+        //       3   5
+        assert!(root == Op { l_param: Box::new(NumberLiteral { val: 2 }), op_type: Add, 
+            r_param: Box::new(Op { l_param: Box::new(NumberLiteral { val: 3 }), op_type: Mul, r_param: Box::new(NumberLiteral { val: 5 }) }) })
     }
 }
