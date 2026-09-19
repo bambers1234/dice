@@ -34,12 +34,12 @@ impl<'a> Cursor<'a> {
         }
     }
     fn advance_token(&mut self) -> Token {
-        // no more characters = finished
+        // skip whitespace before a token, removing it from the input stream via for_each
+        self.chars.peeking_take_while(|&x| x.is_whitespace()).for_each(|_x|{});
         let Some(char) = self.chars.peek() else {
             return End;
         };
-        // remember that every single function to eat chars must actually eat the chars it turns into tokens, 
-        // whether through peeking_take_while() or next()
+        // remember that every single function to eat chars must consume the chars it turns into tokens, 
         // otherwise a character will be repeatead
         #[allow(clippy::unwrap_used)]
         // the check that it's not None is done above, unwrap is safe
@@ -52,7 +52,7 @@ impl<'a> Cursor<'a> {
             ';' => {self.next(); End},
             '+' => {self.next(); Token::Operator { op_type: Add }},
             '*' => {self.next(); Token::Operator { op_type: Mul }},
-            _ => Unknown {pat: self.unknown()},
+            _ => Unknown { pat: self.unknown() }
         };
         token
     }
@@ -109,7 +109,7 @@ mod tests {
     }
     #[test]
     fn unknown_token() {
-        let mut tokens = tokenise("blah");
+        let mut tokens = tokenise("blah\n");
         assert_eq!(tokens.next().unwrap(), Unknown { pat: String::from("blah")});
         assert!(tokens.next().is_none());
     }
