@@ -70,5 +70,9 @@ struct Input {
     #[arg(long, short)]
     code: Option<String>,
 }
-// TODO: optionally store code in output file.
-// if file is given, allow RunImmediately::No
+
+#[test]
+fn cli() {
+    use clap::CommandFactory;
+    Cli::command().debug_assert();
+}
