@@ -1,8 +1,9 @@
 //! Produce and manipulate an abstract syntax tree
 use std::iter::Peekable;
-use super::{errors::CannotInline, tokens::Token::{self, *}};
+use super::tokens::Token::{self, *};
 use Node::*;
 use super::operator::Operator;
+use std::ops::ControlFlow;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Node {
@@ -18,14 +19,15 @@ impl Node {
         Op { l_param: Box::new(l_param), op_type: op, r_param: Box::new(parse(lexer, op.precedence())) }
     }
     /// Traverse and modify an expression tree in-place to inline constants.
-    pub fn inline(&mut self) -> Result<(), CannotInline> {
+    pub fn inline(&mut self) -> ControlFlow<()> {
+        // use ControlFlow- better conceptually than Result, even if it needs some extra code
         // returns () because it modifies in place
         // if both params can be inlined, self = literal
         match self {
-            NumberLiteral { val: _ } => Ok(()),
+            NumberLiteral { val: _ } => ControlFlow::Continue(()),
             Op { l_param, op_type, r_param } => {
-                let l_inlined: Result<(), CannotInline> = l_param.inline(); // modifies IN PLACE- this Op's params change
-                let r_inlined: Result<(), CannotInline> = r_param.inline(); // if they can't be, ? returns Err
+                let l_inlined = l_param.inline(); // modifies IN PLACE- this Op's params change
+                let r_inlined = r_param.inline(); // if they can't be, ? returns Err
                 // return here because otherwise not both params will attempt inlining, but if either is Err then this node must not be inlined
                 l_inlined?;
                 r_inlined?;
@@ -39,9 +41,13 @@ impl Node {
                 let NumberLiteral { val: r_val } = **r_param else {
                     panic!("This should be unreachable, as inline()? ensures both params are NumberLiteral by this point");
                 };
-                // self was Op, now condensed
-                *self = NumberLiteral { val: op_type.calculate(l_val, r_val)? };
-                Ok(())
+                let calc = op_type.calculate(l_val, r_val);
+                if let Err(_) = calc { // map CannotInline to Break
+                    return ControlFlow::Break(())
+                }
+                #[allow(clippy::unwrap_used)] {
+                *self = NumberLiteral { val: calc.unwrap()}; }
+                ControlFlow::Continue(())
             }
         }
     }
@@ -133,8 +139,7 @@ mod tests {
         //     2  Mul
         //        / \
         //       3   4
-        let mut root = parse(&mut tokens, 0);
-        root.inline().unwrap();
+        let root = parse(&mut tokens, 0);
         assert!(root == NumberLiteral { val: 14 })
     }
     #[test]
@@ -178,7 +183,7 @@ mod tests {
                 r_param: Box::new(NumberLiteral { val: 2 }),
             })
         });
-        assert!(root.inline().is_err());
+        assert!(root.inline().is_break());
         //      Add
         //      / \
         //   Dice  2
