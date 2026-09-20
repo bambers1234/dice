@@ -1,7 +1,7 @@
 //! A compiler built-in way to roll dice
 use RollType::*;
 /// The output of a roll
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 struct DiceRoll {
     rolls: Vec<RollType>
 }
