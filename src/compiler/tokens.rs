@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 use Token::*;
-use crate::{operator::Operator::{self, *}};
+use crate::compiler::{operator::Operator::{self, *}};
 use itertools::Itertools;
 use std::str::Chars;
 /// Turn a given input string into a sequence of commands. Case sensitive and sensitive to leading and trailing whitespace

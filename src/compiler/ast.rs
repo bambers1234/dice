@@ -88,8 +88,8 @@ fn left_denotation(lexer: &mut Peekable<impl Iterator<Item = Token>>, left: Node
 
 #[cfg(test)]
 mod tests {
-    use crate::tokens::tokenise;
-    use crate::operator::Operator::*;
+    use crate::compiler::tokens::tokenise;
+    use crate::compiler::operator::Operator::*;
     use super::*;
     // relies on tokenising being correct
     #[test]

@@ -1,4 +1,4 @@
-use crate::errors::CannotInline;
+use crate::compiler::errors::CannotInline;
 use Operator::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Operator {
