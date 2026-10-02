@@ -3,7 +3,7 @@ use std::sync::RwLock;
 use super::bytecode::Bytecode::{self, *};
 use super::errors::InvalidBytecode;
 
-static STACK: RwLock<Vec<u16>> = RwLock::new(Vec::new());
+static STACK: RwLock<Vec<u8>> = RwLock::new(Vec::new());
 
 #[derive(Debug, Clone)]
 struct Cursor {
@@ -16,7 +16,11 @@ impl Iterator for Cursor {
     }
 }
 impl Cursor {
-    fn next_instruction(&mut self, stack: &mut Vec<u16>) -> Result<(), InvalidBytecode>{
+    fn new(bytecode: &[u8]) -> Self {
+        let vec = Vec::from(bytecode).into_iter();
+        Self { bytes: vec }
+    }
+    fn next_instruction(&mut self, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
         let next = self.next();
         if next.is_none() {
             todo!("End of bytecode")
@@ -25,17 +29,18 @@ impl Cursor {
         let instruction = next.unwrap();
         let code = Bytecode::try_from(instruction)?;
         match code {
-            LoadConst => stack.push(self.load_const(instruction)? as u16),
-            LoadBigConst => stack.push(self.load_big_const(instruction)?),
-            IntAdd => stack.push(value),
+            LoadConst => stack.push(self.load_const(instruction)?),
+            IntAdd => Self::int_add(stack)?,
             _ => todo!("Interpret bytecode")
         }
         Ok(())
     }
-    /// Add the last 2 items on the stack
-    fn int_add(stack: &mut Vec<u16>) -> u16 {
-        let first = stack.pop().ol;
-
+    /// Add the last 2 items on the stack and push the result to the stack
+    fn int_add(stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
+        let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntAdd))?;
+        let second = stack.pop().ok_or_else(|| InvalidBytecode::not_enough_on_stack(IntAdd))?;
+        stack.push(first+second);
+        Ok(())
     }
     /// Get a u8
     fn load_const(&mut self, prev_byte: u8) -> Result<u8, InvalidBytecode> {
@@ -50,8 +55,10 @@ impl Cursor {
     }
 
 }
-pub fn main(bytecode: &[u8]) -> Result<(), InvalidBytecode>{
-    let bytecode = std::iter::from_fn(move || {
-
-    })
+pub fn main(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
+    let cursor = Cursor::new(bytecode);
+    // execute and interpret simultaneously
+    // execution in next() method
+    // TODO: execution in next() is confusing architecture
+    cursor.for_each(|byte| {} );
 }
