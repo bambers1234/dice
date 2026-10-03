@@ -33,3 +33,36 @@ impl Node {
         }
     }
 }
+#[cfg(test)]
+mod tests {
+    use crate::compiler::operator::Operator::*;
+
+use super::*;
+    #[test]
+    fn only_constant() {
+        let tree = Node::NumberLiteral { val: 1 };
+        assert_eq!(tree.evaluate(), vec![LOAD_CONST, 0x01]);
+    }
+    #[test]
+    fn one_operator() {
+        let tree = Node::Op { 
+            l_param: Box::new(NumberLiteral { val: 1 }),
+            op_type: Add, 
+            r_param: Box::new(NumberLiteral { val: 1 }),
+        };
+        assert_eq!(tree.evaluate(), vec![LOAD_CONST, 1, LOAD_CONST, 1, INT_ADD]);
+    }
+    #[test]
+    fn multiple_operators() {
+        let tree = Node::Op { 
+            l_param: Box::new(Node::Op { 
+                l_param: Box::new(NumberLiteral { val: 1 }), 
+                op_type: Add, 
+                r_param: Box::new(NumberLiteral { val: 2 }) 
+            }), 
+            op_type: Mul, 
+            r_param: Box::new(NumberLiteral { val: 3 }) 
+        };
+        assert_eq!(tree.evaluate(), vec![LOAD_CONST, 1, LOAD_CONST, 2, INT_ADD, LOAD_CONST, 3, INT_MUL]);
+    }
+}

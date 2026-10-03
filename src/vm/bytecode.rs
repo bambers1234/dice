@@ -69,3 +69,29 @@ mod execution {
     }
 }
 // TODO: use a macro to auto-generate TryFrom<u8> for Bytecode due to large number of variants
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn int_ops() {
+        let mut stack: Vec<u8> = vec![1, 1];
+        int_add(&mut stack).unwrap();
+        assert_eq!(stack, vec![2]);
+        stack.push(3);
+        int_mul(&mut stack).unwrap();
+        assert_eq!(stack, vec![6]);
+    }
+    #[test]
+    fn load() {
+        let mut bytes = vec![1].into_iter();
+        let mut stack = Vec::new();
+        load_const(&mut bytes, &mut stack).unwrap();
+        assert_eq!(stack, vec![1]);
+    }
+    #[test]
+    #[should_panic]
+    fn not_enough_on_stack_for_int_op() {
+        let mut stack = vec![1];
+        int_add(&mut stack).unwrap();
+    }
+}

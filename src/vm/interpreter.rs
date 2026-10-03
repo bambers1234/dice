@@ -29,3 +29,13 @@ pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
     }
     Ok(())
 }
+#[cfg(test)]
+mod tests {
+    use crate::bytecode_defs::*;
+    use super::*;
+
+    #[test]
+    fn execution() {
+        execute(&[LOAD_CONST, 1, LOAD_CONST, 1, INT_ADD]).unwrap();
+    }
+}
