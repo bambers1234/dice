@@ -52,6 +52,8 @@ impl<'a> Cursor<'a> {
             ';' => {self.next(); End},
             '+' => {self.next(); Token::Operator { op_type: Add }},
             '*' => {self.next(); Token::Operator { op_type: Mul }},
+            '/' => {self.next(); Token::Operator { op_type: Div }},
+            '-' => {self.next(); Token::Operator { op_type: Sub }},
             _ => Unknown { pat: self.unknown() }
         };
         token
@@ -128,6 +130,22 @@ mod tests {
         assert_eq!(tokens.next().unwrap(), Token::Operator { op_type: Mul });
         assert_eq!(tokens.next().unwrap(), Number { value: 1 });
         assert!(tokens.next().is_none())
+    }
+    #[test]
+    fn sub() {
+        let mut tokens = tokenise("1-1");
+        assert_eq!(tokens.next().unwrap(), Number { value: 1 });
+        assert_eq!(tokens.next().unwrap(), Token::Operator { op_type: Sub });
+        assert_eq!(tokens.next().unwrap(), Number {value: 1});
+        assert!(tokens.next().is_none());
+    }
+    #[test]
+    fn div() {
+        let mut tokens = tokenise("1/1");
+        assert_eq!(tokens.next().unwrap(), Number { value: 1 });
+        assert_eq!(tokens.next().unwrap(), Token::Operator { op_type: Div });
+        assert_eq!(tokens.next().unwrap(), Number { value: 1 });
+        assert!(tokens.next().is_none());
     }
     #[test]
     fn end() {

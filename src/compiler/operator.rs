@@ -6,13 +6,17 @@ pub enum Operator {
     Add,
     Mul,
     Dice,
+    Div,
+    Sub,
 }
 impl Operator {
     pub fn calculate(&self, l_param: u8, r_param: u8) -> Result<u8, CannotInline> {
         match self {
             Self::Add => Ok(l_param + r_param),
             Self::Mul => Ok(l_param * r_param),
-            Self::Dice => Err(CannotInline {})
+            Self::Dice => Err(CannotInline {}),
+            Self::Div => Ok(l_param/r_param),
+            Self::Sub => Ok(l_param - r_param),
         }
     }
     pub fn precedence(&self) -> u8 {
@@ -21,13 +25,17 @@ impl Operator {
             Add => 1,
             Mul => 2,
             Dice => 3,
+            Sub => 1,
+            Div => 2
         }
     }
     pub fn as_bytecode(&self) -> u8 {
         match self {
             Add => INT_ADD,
             Mul => INT_MUL,
-            Dice => DICE_ROLL
+            Dice => DICE_ROLL,
+            Div => INT_DIV,
+            Sub => INT_SUB,
         }
     }
 }
@@ -37,6 +45,8 @@ impl std::fmt::Display for Operator {
             Add => write!(f, "plus (+)"),
             Mul => write!(f, "multiply (*)"),
             Dice => write!(f, "dice roll (d)"),
+            Div => write!(f, "divide (/)"),
+            Sub => write!(f, "subtract (-)"),
         }
     }
 }
