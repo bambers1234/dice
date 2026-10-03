@@ -11,6 +11,8 @@ pub enum Bytecode { // safer than raw bytes- holds the invariant of being known 
     IntAdd,
     IntMul,
     DiceRoll,
+    IntDiv,
+    IntSub,
 }
 impl TryFrom<u8> for Bytecode {
     type Error = InvalidBytecode;
@@ -20,6 +22,8 @@ impl TryFrom<u8> for Bytecode {
             DICE_ROLL => Ok(DiceRoll),
             INT_ADD => Ok(IntAdd),
             INT_MUL => Ok(IntMul),
+            INT_DIV => Ok(IntDiv),
+            INT_SUB => Ok(IntSub),
             _ => Err(InvalidBytecode::unknown_byte(value))
         }
     }
@@ -36,31 +40,45 @@ impl Bytecode {
             IntAdd => int_add(stack),
             IntMul => int_mul(stack),
             DiceRoll => roll_dice(stack),
-            _ => todo!()
+            IntSub => int_sub(stack),
+            IntDiv => int_div(stack),
         }
     }   
 }
 mod execution {
+    type ExecutionResult = Result<(), InvalidBytecode>;
     use crate::vm::errors::InvalidBytecode;
     use super::Bytecode::*;
-    pub fn load_const(bytes: &mut impl Iterator<Item = u8>, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
+    pub fn load_const(bytes: &mut impl Iterator<Item = u8>, stack: &mut Vec<u8>) -> ExecutionResult {
         stack.push(bytes.next().ok_or_else(|| InvalidBytecode::expected_byte())?);
         Ok(())
     }
+    pub fn int_sub(stack: &mut Vec<u8>) -> ExecutionResult  {
+        let second = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntSub))?;
+        let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntSub))?;
+        stack.push(first - second);
+        Ok(())
+    }
+    pub fn int_div(stack: &mut Vec<u8>) -> ExecutionResult {
+        let second = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntDiv))?;
+        let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntDiv))?;
+        stack.push(first / second);
+        Ok(())
+    }
     /// Add the last 2 items on the stack and push the result to the stack
-    pub fn int_add(stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
+    pub fn int_add(stack: &mut Vec<u8>) -> ExecutionResult {
         let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntAdd))?;
         let second = stack.pop().ok_or_else(|| InvalidBytecode::not_enough_on_stack(IntAdd))?;
         stack.push(first+second);
         Ok(())
     }
-    pub fn int_mul(stack: &mut Vec<u8>) -> Result<(), InvalidBytecode> {
+    pub fn int_mul(stack: &mut Vec<u8>) -> ExecutionResult  {
         let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntMul))?;
         let second  = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntMul))?;
         stack.push(first*second);
         Ok(())
     }
-    pub fn roll_dice(stack: &mut Vec<u8>) -> Result<(), InvalidBytecode> {
+    pub fn roll_dice(stack: &mut Vec<u8>) -> ExecutionResult  {
         let sides = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(DiceRoll))?;
         let amount = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(DiceRoll))?;
         let dice = super::super::dice::roll(amount, sides);
@@ -93,5 +111,19 @@ mod tests {
     fn not_enough_on_stack_for_int_op() {
         let mut stack = vec![1];
         int_add(&mut stack).unwrap();
+    }
+    #[test]
+    fn int_op_with_bidmas() {
+        let mut stack = vec![2, 1];
+        int_div(&mut stack).unwrap();
+        assert_eq!(stack, vec![2]);
+    }
+    #[test]
+    #[should_panic]
+    fn int_op_bidmas_wrong() {
+        let mut stack = vec![1, 2];
+        // panics because 1/2 is not int
+        int_div(&mut stack).unwrap();
+        assert_eq!(stack, vec![2]);
     }
 }
