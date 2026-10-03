@@ -12,8 +12,16 @@ impl DiceRoll {
     fn new(rolls: Vec<RollType>) -> Self {
         Self { rolls }
     }
+    pub fn keep_highest(&mut self, num_to_keep: u8) {
+        use itertools::Itertools;
+        self.rolls = self.rolls.iter().sorted_by(|&x, &y| y.into_value().cmp(&x.into_value()))
+            .map(|x| *x ).take(num_to_keep as usize).collect();
+    }
 }
-#[derive(Clone, Copy, Debug)]
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum RollType {
     Normal(u8),
     One,
@@ -45,4 +53,15 @@ pub fn roll(amount: u8, sides: u8) -> DiceRoll {
         }
     }
     DiceRoll::new(rolls)
+}
+#[cfg(test)]
+mod tests {
+    use crate::vm::dice::RollType;
+    use super::*;
+    #[test]
+    fn keep_highest() {
+        let mut dice = DiceRoll{ rolls: vec![RollType::One, RollType::Normal(2), RollType::Normal(3), RollType::Normal(4), RollType::Normal(5), RollType::Max(6)] };
+        dice.keep_highest(2);
+        assert_eq!(dice.rolls, vec![RollType::Max(6), RollType::Normal(5)]);
+    }
 }

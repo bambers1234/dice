@@ -11,6 +11,7 @@ pub enum Bytecode { // safer than raw bytes- holds the invariant of being known 
     IntAdd,
     IntMul,
     DiceRoll,
+    DiceRollKeepHighest,
     IntDiv,
     IntSub,
 }
@@ -24,6 +25,7 @@ impl TryFrom<u8> for Bytecode {
             INT_MUL => Ok(IntMul),
             INT_DIV => Ok(IntDiv),
             INT_SUB => Ok(IntSub),
+            DICE_ROLL_KEEP_HIGHEST => Ok(DiceRollKeepHighest),
             _ => Err(InvalidBytecode::unknown_byte(value))
         }
     }
@@ -42,16 +44,27 @@ impl Bytecode {
             DiceRoll => roll_dice(stack),
             IntSub => int_sub(stack),
             IntDiv => int_div(stack),
+            DiceRollKeepHighest => roll_dice_keep_highest(stack),
         }
     }   
 }
 mod execution {
+    // be aware that the order on stack is the reverse of the order the parameters appear in, eg 2 - 1 has 1 then 2 on the stack
     type ExecutionResult = Result<(), InvalidBytecode>;
     use crate::vm::errors::InvalidBytecode;
     use super::Bytecode::*;
     pub fn load_const(bytes: &mut impl Iterator<Item = u8>, stack: &mut Vec<u8>) -> ExecutionResult {
         #[allow(clippy::redundant_closure)] // bug in clippy
         stack.push(bytes.next().ok_or_else(|| InvalidBytecode::expected_byte())?);
+        Ok(())
+    }
+    pub fn roll_dice_keep_highest(stack: &mut Vec<u8>) -> ExecutionResult {
+        let keep = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(DiceRollKeepHighest))?;
+        let sides = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(DiceRollKeepHighest))?;
+        let amount = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(DiceRollKeepHighest))?;
+        let mut dice = super::super::dice::roll(amount, sides);
+        dice.keep_highest(keep);
+        stack.push(dice.sum());
         Ok(())
     }
     pub fn int_sub(stack: &mut Vec<u8>) -> ExecutionResult  {
