@@ -3,7 +3,6 @@
 use super::ast::Node;
 
 pub fn ast_to_bytecode<'a>(ast: Node) -> Vec<u8> {
-    // What do I need the ast to return?
     // 1d6+1 = 
     //      Add
     //      / \
@@ -16,7 +15,7 @@ pub fn ast_to_bytecode<'a>(ast: Node) -> Vec<u8> {
     // DICE_ROLL
     // LOAD_CONST 1
     // ADD
-    // order of traversal: l_param, r_param, self (post order traversal)
+    // order of traversal: l_param, r_param, self (post order traversal, going to bottom first)
     ast.evaluate()
 }
 
