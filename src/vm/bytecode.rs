@@ -1,10 +1,9 @@
-use strum::{EnumString};
 #[allow(unused)]
 use Bytecode::*;
 
 use crate::vm::errors::InvalidBytecode;
 use execution::*;
-#[derive(Clone, Copy, Debug, Eq, PartialEq, EnumString)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
 pub enum Bytecode {
     LoadConst,
@@ -35,14 +34,14 @@ impl Bytecode {
             LoadConst => load_const(bytes, stack),
             IntAdd => int_add(stack),
             IntMul => int_mul(stack),
-            DiceRoll => todo!("Dice: Does not return a pure u8 so cannot be pushed to stack"),
+            DiceRoll => roll_dice(stack),
             _ => todo!()
         }
     }   
 }
 mod execution {
     use crate::vm::errors::InvalidBytecode;
-    use super::Bytecode::{self, *};
+    use super::Bytecode::*;
     pub fn load_const(bytes: &mut impl Iterator<Item = u8>, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
         stack.push(bytes.next().ok_or_else(|| InvalidBytecode::expected_byte())?);
         Ok(())
@@ -58,6 +57,13 @@ mod execution {
         let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntMul))?;
         let second  = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntMul))?;
         stack.push(first*second);
+        Ok(())
+    }
+    pub fn roll_dice(stack: &mut Vec<u8>) -> Result<(), InvalidBytecode> {
+        let sides = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(DiceRoll))?;
+        let amount = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(DiceRoll))?;
+        let dice = super::super::dice::roll(amount, sides);
+        stack.push(dice.sum());
         Ok(())
     }
 }
