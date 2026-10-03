@@ -2,7 +2,7 @@
 #![allow(unused)]
 use super::ast::Node;
 
-pub fn ast_to_bytecode<'a>(ast: Node) -> &'a [u8] {
+pub fn ast_to_bytecode<'a>(ast: Node) -> Vec<u8> {
     // What do I need the ast to return?
     // 1d6+1 = 
     //      Add
@@ -17,16 +17,20 @@ pub fn ast_to_bytecode<'a>(ast: Node) -> &'a [u8] {
     // LOAD_CONST 1
     // ADD
     // order of traversal: l_param, r_param, self (post order traversal)
-    todo!("Convert ast to bytecode, design bytecode etc")
+    ast.evaluate()
 }
 
 use Node::*;
 use crate::bytecode_defs::*;
 /// Operations on the ast specific to generating bytecode
 impl Node {
-    pub fn evaluate(&self) -> &[u8] {
+    /// Evaluate the ast as bytecode using a post-order traversal
+    pub fn evaluate(&self) -> Vec<u8> {
         match self {
-            NumberLiteral { val } => 
+            NumberLiteral { val } => vec![LOAD_CONST, *val],
+            Op { l_param, op_type, r_param } => {
+                l_param.evaluate().into_iter().chain(r_param.evaluate()).chain([op_type.as_bytecode()]).collect()
+            }
         }
     }
 }

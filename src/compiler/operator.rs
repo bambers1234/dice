@@ -1,4 +1,5 @@
 use crate::compiler::errors::CannotInline;
+use crate::bytecode_defs::*;
 use Operator::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Operator {
@@ -20,6 +21,13 @@ impl Operator {
             Add => 1,
             Mul => 2,
             Dice => 3,
+        }
+    }
+    pub fn as_bytecode(&self) -> u8 {
+        match self {
+            Add => INT_ADD,
+            Mul => INT_MUL,
+            Dice => DICE_ROLL
         }
     }
 }
