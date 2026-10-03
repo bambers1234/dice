@@ -139,8 +139,9 @@ mod tests {
         //     2  Mul
         //        / \
         //       3   4
-        let root = parse(&mut tokens, 0);
-        assert!(root == NumberLiteral { val: 14 })
+        let mut root = parse(&mut tokens, 0);
+        let _ = root.inline();
+        assert_eq!(root, NumberLiteral { val: 14 })
     }
     #[test]
     fn dice_op() {
