@@ -2,10 +2,11 @@
 use Bytecode::*;
 
 use crate::vm::errors::InvalidBytecode;
+use crate::bytecode_defs::*;
 use execution::*;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
-pub enum Bytecode {
+pub enum Bytecode { // safer than raw bytes- holds the invariant of being known instructions
     LoadConst,
     IntAdd,
     IntMul,
@@ -15,10 +16,10 @@ impl TryFrom<u8> for Bytecode {
     type Error = InvalidBytecode;
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(LoadConst),
-            1 => Ok(DiceRoll),
-            2 => Ok(IntAdd),
-            3 => Ok(IntMul),
+            LOAD_CONST => Ok(LoadConst),
+            DICE_ROLL => Ok(DiceRoll),
+            INT_ADD => Ok(IntAdd),
+            INT_MUL => Ok(IntMul),
             _ => Err(InvalidBytecode::unknown_byte(value))
         }
     }

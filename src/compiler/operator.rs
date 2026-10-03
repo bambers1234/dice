@@ -7,14 +7,14 @@ pub enum Operator {
     Dice,
 }
 impl Operator {
-    pub fn calculate(&self, l_param: u32, r_param: u32) -> Result<u32, CannotInline> {
+    pub fn calculate(&self, l_param: u8, r_param: u8) -> Result<u8, CannotInline> {
         match self {
             Self::Add => Ok(l_param + r_param),
             Self::Mul => Ok(l_param * r_param),
             Self::Dice => Err(CannotInline {})
         }
     }
-    pub fn precedence(&self) -> u32 {
+    pub fn precedence(&self) -> u8 {
         // higher precedence = becomes a parameter
         match self {
             Add => 1,

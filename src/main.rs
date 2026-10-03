@@ -7,6 +7,7 @@ use crate::cli::Cli;
 mod compiler;
 mod vm;
 mod cli;
+mod bytecode_defs;
 
 static INPUT: OnceLock<String> = OnceLock::new();
 fn main() {

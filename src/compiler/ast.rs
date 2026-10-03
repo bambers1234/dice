@@ -8,7 +8,7 @@ use std::ops::ControlFlow;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Node {
     // leaf
-    NumberLiteral{ val: u32 },
+    NumberLiteral{ val: u8 },
     // internal node has subtree either side
     // includes dice rolls
     Op{ l_param: Box<Node>, op_type: Operator, r_param: Box<Node> },
@@ -16,7 +16,7 @@ pub enum Node {
 impl Node {
     /// Convert a given Operator into the corresponding expression tree node
     fn from_op(lexer: &mut Peekable<impl Iterator<Item = Token>>, op: Operator, l_param: Node) -> Node {
-        Op { l_param: Box::new(l_param), op_type: op, r_param: Box::new(parse(lexer, op.precedence())) }
+        Op { l_param: Box::new(l_param), op_type: op, r_param: Box::new(parse(lexer, op.precedence().into())) }
     }
     /// Traverse and modify an expression tree in-place to inline constants.
     pub fn inline(&mut self) -> ControlFlow<()> {
@@ -31,7 +31,7 @@ impl Node {
                 // return here because otherwise not both params will attempt inlining, but if either is Err then this node must not be inlined
                 l_inlined?;
                 r_inlined?;
-                // extract the inner u32
+                // extract the inner u8
                 // panic is safe, ? ensures both params are NumberLiteral by this point
                 #[allow(clippy::panic)]
                 let NumberLiteral { val: l_val } = **l_param else {
@@ -55,7 +55,7 @@ impl Node {
 /// Produce an expression tree from a given token supplier, returning the root node. 
 /// ## Panics
 /// If there is a syntax error in the input
-pub fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u32) -> Node {
+pub fn parse(lexer: &mut Peekable<impl Iterator<Item = Token>>, precedence: u8) -> Node {
     // use a Pratt operator-precedence parser
     let head_token = lexer.next().expect("SYNTAX ERROR: expected token, found end of input");
     let mut left = null_denotation(lexer, head_token);

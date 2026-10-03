@@ -57,13 +57,13 @@ impl<'a> Cursor<'a> {
         token
     }
     /// Continue to consume chars whilst in a digit, then returning the numeric value of those digits.
-    fn eat_digits(&mut self) -> u32 {
+    fn eat_digits(&mut self) -> u8 {
         let mut number = String::new();
         self.chars.peeking_take_while(|ch|ch.is_numeric()).for_each(|ch|number.push(ch));
         // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
         // so all chars are certain to be digits.
         #[allow(clippy::unwrap_used)]
-        number.parse::<u32>().unwrap()
+        number.parse::<u8>().unwrap()
     }
     fn unknown(&mut self) -> String {
         let mut pat = String::new();
@@ -77,7 +77,7 @@ impl<'a> Cursor<'a> {
 pub enum Token {
     End,
     // only positive ints are supported
-    Number { value: u32 },
+    Number { value: u8 },
     Operator {op_type: Operator },
     Unknown {pat: String},
 }
