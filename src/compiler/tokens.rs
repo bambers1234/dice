@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 use Token::*;
-use crate::compiler::{operator::Operator::{self, *}};
+use crate::compiler::{operator::{Operator::{self, *}, DiceOps::{self, *}}};
 use itertools::Itertools;
 use std::str::Chars;
 /// Turn a given input string into a sequence of commands. Case sensitive and sensitive to leading and trailing whitespace
@@ -48,12 +48,13 @@ impl<'a> Cursor<'a> {
             '0'..='9' => Number {
                 value: self.eat_digits(),
             },
-            'd' => {self.next(); Token::Operator { op_type: Dice }},
+            'd' => {self.next(); Token::Operator { op_type: Operator::Dice(DiceOps::Dice) }},
             ';' => {self.next(); End},
             '+' => {self.next(); Token::Operator { op_type: Add }},
             '*' => {self.next(); Token::Operator { op_type: Mul }},
             '/' => {self.next(); Token::Operator { op_type: Div }},
             '-' => {self.next(); Token::Operator { op_type: Sub }},
+            'k' => {self.next(); Token::Operator { op_type: Operator::Dice(KeepHighest) }}
             _ => Unknown { pat: self.unknown() }
         };
         token
@@ -105,7 +106,7 @@ mod tests {
     fn get_dice_tokens() {
         let mut tokens = tokenise("1d6");
         assert_eq!(tokens.next().unwrap(), Number { value: 1 });
-        assert_eq!(tokens.next().unwrap(), Token::Operator { op_type: Dice });
+        assert_eq!(tokens.next().unwrap(), Token::Operator { op_type: Operator::Dice(DiceOps::Dice) });
         assert_eq!(tokens.next().unwrap(), Number { value: 6 });
         assert!(tokens.next().is_none());
     }

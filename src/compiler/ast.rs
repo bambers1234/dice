@@ -94,8 +94,9 @@ fn left_denotation(lexer: &mut Peekable<impl Iterator<Item = Token>>, left: Node
 
 #[cfg(test)]
 mod tests {
-    use crate::compiler::tokens::tokenise;
-    use crate::compiler::operator::Operator::*;
+    use crate::compiler::operator::DiceOps::{self, *};
+use crate::compiler::tokens::tokenise;
+    use crate::compiler::operator::Operator::{self, *};
     use super::*;
     // relies on tokenising being correct
     #[test]
@@ -155,7 +156,7 @@ mod tests {
         assert_eq!(root, Op {
             l_param: Box::new(Op { 
                 l_param: Box::new(NumberLiteral { val: 1 }), 
-                op_type: Dice, 
+                op_type: Operator::Dice(DiceOps::Dice), 
                 r_param: Box::new(NumberLiteral { val: 6 })
             }), 
             op_type: Add, 
@@ -174,7 +175,7 @@ mod tests {
         assert_eq!(root, Op {
             l_param: Box::new(Op { 
                 l_param: Box::new(NumberLiteral { val: 1 }), 
-                op_type: Dice, 
+                op_type: Operator::Dice(DiceOps::Dice), 
                 r_param: Box::new(NumberLiteral { val: 6 }),
             }),
             op_type: Add,
@@ -194,7 +195,7 @@ mod tests {
         assert_eq!(root, Op {
             l_param: Box::new(Op {
                 l_param: Box::new(NumberLiteral { val: 1 }),
-                op_type: Dice,
+                op_type: Operator::Dice(DiceOps::Dice),
                 r_param: Box::new(NumberLiteral { val: 6 }),
             }),
             op_type: Add,

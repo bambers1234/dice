@@ -7,8 +7,8 @@ use std::fs::File;
 /// 
 /// Input some code and the program will translate it. You can then save it in a file and run whenever you want.
 /// # Syntax
-/// ## Dice 
-/// XdN rolls X dice with N sides
+/// ## Dice
+/// XdN rolls X dice with N sides 
 /// ## Arithmetic
 /// Basic arithmetic- +, -, *, /
 /// Performing arithmetic on a dice roll such as XdN + 1 performs the arithmetic on the total of the roll.
