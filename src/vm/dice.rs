@@ -7,7 +7,7 @@ pub struct DiceRoll {
 }
 impl DiceRoll {
     pub fn sum(&self) -> u8 {
-        self.rolls.iter().fold(0, |acc, &ele| {println!("acc: {}, ele: {}", acc, ele.into_value()); acc + ele.into_value()})
+        self.rolls.iter().fold(0, |acc, &ele| acc + ele.into_value())
     }
     fn new(rolls: Vec<RollType>) -> Self {
         Self { rolls }
@@ -25,7 +25,7 @@ impl RollType {
         match self {
             Normal(num) => num,
             One => 1,
-            Max(num) => {println!("Extracting {} from die: max value", num); num}
+            Max(num) => num
         }
     }
 }
@@ -35,11 +35,9 @@ pub fn roll(amount: u8, sides: u8) -> DiceRoll {
     for _i in 0..amount {
         let res = rand::random_range(1..=sides);
         if res == sides {
-            println!("Max rolled! value: {}", res);
             rolls.push(RollType::Max(res));
-            println!("value once inside roll: {:?}", rolls.last().unwrap() )
         }
-        if res == 1 {
+        else if res == 1 {
             rolls.push(RollType::One)
         }
         else {
