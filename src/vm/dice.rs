@@ -31,7 +31,7 @@ impl RollType {
 }
 
 fn roll(amount: u32, sides: u32) -> DiceRoll {
-    let rolls = Vec::new();
+    let mut rolls = Vec::new();
     for i in 0..amount {
         let res = rand::random_range(1..=sides);
         if res == sides {

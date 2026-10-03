@@ -3,6 +3,7 @@ use strum::{EnumString};
 use Bytecode::*;
 
 use crate::vm::errors::InvalidBytecode;
+use execution::*;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, EnumString)]
 #[repr(u8)]
 pub enum Bytecode {
@@ -26,6 +27,38 @@ impl TryFrom<u8> for Bytecode {
 impl std::fmt::Display for Bytecode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
+    }
+}
+impl Bytecode {
+    pub fn execute(&self, stack: &mut Vec<u8>, bytes: &mut impl Iterator<Item = u8>) -> Result<(), InvalidBytecode>{
+        match self {
+            LoadConst => load_const(bytes, stack),
+            IntAdd => int_add(stack),
+            IntMul => int_mul(stack),
+            DiceRoll => todo!("Dice: Does not return a pure u8 so cannot be pushed to stack"),
+            _ => todo!()
+        }
+    }   
+}
+mod execution {
+    use crate::vm::errors::InvalidBytecode;
+    use super::Bytecode::{self, *};
+    pub fn load_const(bytes: &mut impl Iterator<Item = u8>, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
+        stack.push(bytes.next().ok_or_else(|| InvalidBytecode::expected_byte())?);
+        Ok(())
+    }
+    /// Add the last 2 items on the stack and push the result to the stack
+    pub fn int_add(stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
+        let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntAdd))?;
+        let second = stack.pop().ok_or_else(|| InvalidBytecode::not_enough_on_stack(IntAdd))?;
+        stack.push(first+second);
+        Ok(())
+    }
+    pub fn int_mul(stack: &mut Vec<u8>) -> Result<(), InvalidBytecode> {
+        let first = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntMul))?;
+        let second  = stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(IntMul))?;
+        stack.push(first*second);
+        Ok(())
     }
 }
 // TODO: use a macro to auto-generate TryFrom<u8> for Bytecode due to large number of variants
