@@ -27,6 +27,12 @@ pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
     while let Some(byte) = bytes.next() { // while bc for loop causes cannot borrow mutably more than once at a time
         Bytecode::try_from(byte)?.execute(&mut stack, &mut bytes)?;
     }
+    // display the final item on the stack, the result of the whole computation
+    println!("{}", { if let Some(output) = stack.pop() {
+        output.to_string()
+    } else {
+        "".to_string()
+    }});
     Ok(())
 }
 #[cfg(test)]
