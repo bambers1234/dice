@@ -50,6 +50,7 @@ mod execution {
     use crate::vm::errors::InvalidBytecode;
     use super::Bytecode::*;
     pub fn load_const(bytes: &mut impl Iterator<Item = u8>, stack: &mut Vec<u8>) -> ExecutionResult {
+        #[allow(clippy::redundant_closure)] // bug in clippy
         stack.push(bytes.next().ok_or_else(|| InvalidBytecode::expected_byte())?);
         Ok(())
     }
@@ -122,7 +123,7 @@ mod tests {
     #[should_panic]
     fn int_op_bidmas_wrong() {
         let mut stack = vec![1, 2];
-        // panics because 1/2 is not int
+        // panics because 1/2 is not
         int_div(&mut stack).unwrap();
         assert_eq!(stack, vec![2]);
     }

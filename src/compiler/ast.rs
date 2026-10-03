@@ -16,7 +16,7 @@ pub enum Node {
 impl Node {
     /// Convert a given Operator into the corresponding expression tree node
     fn from_op(lexer: &mut Peekable<impl Iterator<Item = Token>>, op: Operator, l_param: Node) -> Node {
-        Op { l_param: Box::new(l_param), op_type: op, r_param: Box::new(parse(lexer, op.precedence().into())) }
+        Op { l_param: Box::new(l_param), op_type: op, r_param: Box::new(parse(lexer, op.precedence())) }
     }
     /// Traverse and modify an expression tree in-place to inline constants.
     pub fn inline(&mut self) -> ControlFlow<()> {
@@ -42,7 +42,7 @@ impl Node {
                     panic!("This should be unreachable, as inline()? ensures both params are NumberLiteral by this point");
                 };
                 let calc = op_type.calculate(l_val, r_val);
-                if let Err(_) = calc { // map CannotInline to Break
+                if calc.is_err() { // map CannotInline to Break
                     return ControlFlow::Break(())
                 }
                 #[allow(clippy::unwrap_used)] {

@@ -32,7 +32,7 @@ impl RollType {
 
 pub fn roll(amount: u8, sides: u8) -> DiceRoll {
     let mut rolls = Vec::new();
-    for i in 0..amount {
+    for _i in 0..amount {
         let res = rand::random_range(1..=sides);
         if res == sides {
             rolls.push(RollType::Max(res));

@@ -2,7 +2,7 @@
 #![allow(unused)]
 use super::ast::Node;
 
-pub fn ast_to_bytecode<'a>(ast: Node) -> Vec<u8> {
+pub fn ast_to_bytecode(ast: Node) -> Vec<u8> {
     // 1d6+1 = 
     //      Add
     //      / \

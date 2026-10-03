@@ -18,17 +18,20 @@ fn main() {
         crate::vm::execute(&bytecode);
     }
     if let Some(path) = cli.write_out() {
-
+        write_to_file(&bytecode, path);
     }
 }
 use std::path::Path;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 fn write_to_file(bytecode: &[u8], file: &Path) {
+    #[allow(clippy::panic)] // desired
     let file = OpenOptions::new()
         .create(true)
+        .truncate(true)
         .write(true)
-        .open(file).unwrap();
+        .open(file).unwrap_or_else(|error| panic!("Error opening supplied output file:\n{}", error)); 
     let mut file = BufWriter::new(file);
-    file.write_all(bytecode).unwrap();
+    #[allow(clippy::panic)] // desired
+    file.write_all(bytecode).unwrap_or_else(|error| panic!("Error writing to supplied output file, even though it opened successfully:\n{}", error));
 }
