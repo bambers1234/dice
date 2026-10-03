@@ -202,4 +202,25 @@ use crate::compiler::tokens::tokenise;
             r_param: Box::new(NumberLiteral { val: 2 }),
         })
     }
+    #[test]
+    fn keep_dice() {
+        let mut tokens = tokenise("1d6k1");
+        //    KeepHighest
+        //      /  \
+        //    Dice  1
+        //    /  \
+        //   1    6
+        let tree = parse(&mut tokens, 0);
+        assert_eq!(tree, Op { 
+            l_param: Box::new(Op { 
+                l_param: Box::new(NumberLiteral { val: 1 }), 
+                op_type: Operator::Dice(DiceOps::Dice),
+                r_param: Box::new(NumberLiteral { val: 6 })
+            }), 
+            op_type: Operator::Dice(KeepHighest), 
+            r_param: Box::new(NumberLiteral { val: 1 }),
+            }
+        );
+
+    }
 }
