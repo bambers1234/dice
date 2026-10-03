@@ -21,7 +21,7 @@ impl Cursor {
         Self { bytes: vec }
     }
 }
-pub fn main(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
+pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
     let mut bytes = Cursor::new(bytecode);
     let mut stack = STACK.write().unwrap();
     while let Some(byte) = bytes.next() { // while bc for loop causes cannot borrow mutably more than once at a time

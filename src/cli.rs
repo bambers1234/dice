@@ -58,6 +58,16 @@ impl Cli {
         reader.read_to_string(&mut buf)?;
         Ok(buf)
     }
+    pub fn run_immediately(&self) -> bool {
+        self.run_immediately
+    }
+    pub fn write_out(&self) -> Option<&Path> {
+        if let Some(path) = &self.out {
+            Some(path.as_path())
+        } else {
+            None
+        }
+    }
 }
 /// Where to read input from
 #[derive(Args, Debug, Clone)]
