@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 use Token::*;
-use prev_iter::PrevPeekable;
+use super::errors::SyntaxError;
 use crate::compiler::{operator::{Operator::{self, *}, DiceOps::{self, *}}};
 use itertools::Itertools;
 use std::str::Chars;
@@ -42,21 +42,23 @@ impl<'a> Cursor<'a> {
         };
         // remember that every single function to eat chars must consume the chars it turns into tokens, 
         // otherwise a character will be repeatead
-        #[allow(clippy::unwrap_used)]
         // the check that it's not None is done above, unwrap is safe
+        #[allow(clippy::unwrap_used)]
+        #[allow(clippy::panic)]
         let token = match char.to_lowercase().next().unwrap() {
             // numeric literal
             '0'..='9' => Number {
                 value: self.eat_digits(),
             },
-            'd' => {self.starts_d() },
+            
+            'd' => {self.starts_d().unwrap_or_else(|err| panic!("{}", err)) },
             ';' => {self.next(); End},
             '+' => {self.next(); Token::Operator { op_type: Add }},
             '*' => {self.next(); Token::Operator { op_type: Mul }},
             '/' => {self.next(); Token::Operator { op_type: Div }},
             '-' => {self.next(); Token::Operator { op_type: Sub }},
-            'k' => {self.next(); Token::Operator { op_type: Operator::Dice(KeepHighest) }}
-            _ => Unknown { pat: self.unknown() }
+            'k' => {self.next(); Token::Operator { op_type: Operator::Dice(KeepHighest) }},
+            _ => panic!("{}", SyntaxError::unknown_token(Unknown { pat: self.unknown() })),
         };
         token
     }
@@ -69,23 +71,23 @@ impl<'a> Cursor<'a> {
         #[allow(clippy::unwrap_used)]
         number.parse::<u8>().unwrap()
     }
-    fn starts_d(&mut self) -> Token {
+    fn starts_d(&mut self) -> Result<Token, SyntaxError> {
         #[allow(clippy::unwrap_used)]
         self.next().unwrap();
         if let Some(char) = self.chars.peek() {
             if *char == 'l' {
                 #[allow(clippy::unwrap_used)]
                 self.next().unwrap();
-                Token::Operator { op_type: Operator::Dice(DiceOps::DropLowest) }
+                Ok(Token::Operator { op_type: Operator::Dice(DiceOps::DropLowest) })
             } else if char.is_numeric() {
-                Token::Operator { op_type: Operator::Dice(DiceOps::Dice) }
+                Ok(Token::Operator { op_type: Operator::Dice(DiceOps::Dice) })
             } else {
                 let mut pat = String::from("d");
                 pat.push_str(&self.unknown());
-                Unknown { pat }
+                Err(SyntaxError::unknown_token(Unknown { pat }))
             }
         } else {
-           ExpectedTokenAfter { pat: String::from("d") }
+           Err(SyntaxError::token_not_found(String::from("d")))
         }
     }
     fn unknown(&mut self) -> String {
@@ -103,16 +105,14 @@ pub enum Token {
     Number { value: u8 },
     Operator {op_type: Operator },
     Unknown {pat: String},
-    ExpectedTokenAfter {pat: String},
 }
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             End => write!(f, "End of Input"),
             Number { value } => write!(f, "Numeric literal '{}'", value),
-            Unknown { pat } => write!(f, "Unknown token '{}'", pat),
+            Unknown { pat } => write!(f, "'{}'", pat),
             Token::Operator { op_type } => write!(f, "Operator: {}", op_type),
-            ExpectedTokenAfter { pat } => write!(f, "Missing token after {}", pat),
         }
     }
 }
