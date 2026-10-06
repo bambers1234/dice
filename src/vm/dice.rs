@@ -18,7 +18,9 @@ impl DiceRoll {
             .map(|x| *x ).take(num_to_keep as usize).collect();
     }
     pub fn drop_lowest(&mut self, num_to_drop: u8) {
-        
+        use itertools::Itertools;
+        self.rolls = self.rolls.iter().sorted_by(|&a, &b| a.into_value().cmp(&b.into_value()))
+            .map(|x| *x).take(num_to_drop as usize).collect();
     }
 }
 
