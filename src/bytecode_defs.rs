@@ -6,3 +6,4 @@ pub const DICE_ROLL: u8 = 0x04;
 pub const INT_DIV: u8 = 0x05;
 pub const INT_SUB: u8 = 0x06;
 pub const DICE_ROLL_KEEP_HIGHEST: u8 =  0x07;
+pub const DICE_ROLL_DROP_LOWEST: u8 = 0x08;

@@ -12,7 +12,8 @@ pub enum Operator {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DiceOps {
     Dice,
-    KeepHighest
+    KeepHighest,
+    DropLowest,
 }
 impl Operator {
     pub fn calculate(&self, l_param: u8, r_param: u8) -> Result<u8, CannotInline> {
@@ -22,7 +23,6 @@ impl Operator {
             Self::Dice(_) => Err(CannotInline {}),
             Self::Div => Ok(l_param/r_param),
             Self::Sub => Ok(l_param - r_param),
-
         }
     }
     pub fn precedence(&self) -> u8 {
@@ -33,6 +33,7 @@ impl Operator {
             Dice(op) => match op {
                 DiceOps::Dice => 4,
                 DiceOps::KeepHighest => 3,
+                DiceOps::DropLowest => 3,
             },
             Sub => 1,
             Div => 2
@@ -45,6 +46,7 @@ impl Operator {
             Dice(op) => match op {
                 DiceOps::Dice => DICE_ROLL,
                 DiceOps::KeepHighest => DICE_ROLL_KEEP_HIGHEST,
+                DiceOps::DropLowest => DICE_ROLL_DROP_LOWEST,
             },
             Div => INT_DIV,
             Sub => INT_SUB,
@@ -59,6 +61,7 @@ impl std::fmt::Display for Operator {
             Dice(op) => match op {
                 DiceOps::Dice => write!(f, "dice roll (d)"),
                 DiceOps::KeepHighest => write!(f, "dice roll keep highest (k)"),
+                DiceOps::DropLowest => write!(f, "dice roll drop lowest (XdNdY)"),
             },
             Div => write!(f, "divide (/)"),
             Sub => write!(f, "subtract (-)"),

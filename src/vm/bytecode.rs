@@ -12,6 +12,7 @@ pub enum Bytecode { // safer than raw bytes- holds the invariant of being known 
     IntMul,
     DiceRoll,
     DiceRollKeepHighest,
+    DiceRollDropLowest,
     IntDiv,
     IntSub,
 }
@@ -26,6 +27,7 @@ impl TryFrom<u8> for Bytecode {
             INT_DIV => Ok(IntDiv),
             INT_SUB => Ok(IntSub),
             DICE_ROLL_KEEP_HIGHEST => Ok(DiceRollKeepHighest),
+            DICE_ROLL_DROP_LOWEST => Ok(DiceRollDropLowest),
             _ => Err(InvalidBytecode::unknown_byte(value))
         }
     }
@@ -45,14 +47,15 @@ impl Bytecode {
             IntSub => int_sub(stack),
             IntDiv => int_div(stack),
             DiceRollKeepHighest => roll_dice_keep_highest(stack),
+            DiceRollDropLowest => roll_dice_drop_lowest(stack),
         }
     }   
 }
 mod execution {
     // be aware that the order on stack is the reverse of the order the parameters appear in, eg 2 - 1 has 1 then 2 on the stack
     type ExecutionResult = Result<(), InvalidBytecode>;
-    use crate::vm::errors::InvalidBytecode;
-    use super::Bytecode::*;
+    use crate::vm::{dice::roll, errors::InvalidBytecode};
+    use super::Bytecode::{self, *};
     pub fn load_const(bytes: &mut impl Iterator<Item = u8>, stack: &mut Vec<u8>) -> ExecutionResult {
         #[allow(clippy::redundant_closure)] // bug in clippy
         stack.push(bytes.next().ok_or_else(|| InvalidBytecode::expected_byte())?);
@@ -98,6 +101,18 @@ mod execution {
         let dice = super::super::dice::roll(amount, sides);
         stack.push(dice.sum());
         Ok(())
+    }
+    pub fn roll_dice_drop_lowest(stack: &mut Vec<u8>) -> ExecutionResult {
+        let drop = get_stack(stack, DiceRollDropLowest)?;
+        let sides = get_stack(stack, DiceRollDropLowest)?;
+        let amount = get_stack(stack, DiceRollDropLowest)?;
+        let mut dice = roll(amount, sides);
+        dice.drop_lowest(drop);
+        stack.push(dice.sum());
+        Ok(())
+    }
+    fn get_stack(stack: &mut Vec<u8>, op: Bytecode) -> Result<u8, InvalidBytecode> {
+        stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(op))
     }
 }
 // TODO: use a macro to auto-generate TryFrom<u8> for Bytecode due to large number of variants

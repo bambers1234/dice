@@ -1,5 +1,6 @@
 use std::iter::Peekable;
 use Token::*;
+use prev_iter::PrevPeekable;
 use crate::compiler::{operator::{Operator::{self, *}, DiceOps::{self, *}}};
 use itertools::Itertools;
 use std::str::Chars;
@@ -48,7 +49,7 @@ impl<'a> Cursor<'a> {
             '0'..='9' => Number {
                 value: self.eat_digits(),
             },
-            'd' => {self.next(); Token::Operator { op_type: Operator::Dice(DiceOps::Dice) }},
+            'd' => {self.starts_d() },
             ';' => {self.next(); End},
             '+' => {self.next(); Token::Operator { op_type: Add }},
             '*' => {self.next(); Token::Operator { op_type: Mul }},
@@ -68,6 +69,25 @@ impl<'a> Cursor<'a> {
         #[allow(clippy::unwrap_used)]
         number.parse::<u8>().unwrap()
     }
+    fn starts_d(&mut self) -> Token {
+        #[allow(clippy::unwrap_used)]
+        self.next().unwrap();
+        if let Some(char) = self.chars.peek() {
+            if *char == 'l' {
+                #[allow(clippy::unwrap_used)]
+                self.next().unwrap();
+                Token::Operator { op_type: Operator::Dice(DiceOps::DropLowest) }
+            } else if char.is_numeric() {
+                Token::Operator { op_type: Operator::Dice(DiceOps::Dice) }
+            } else {
+                let mut pat = String::from("d");
+                pat.push_str(&self.unknown());
+                Unknown { pat }
+            }
+        } else {
+           ExpectedTokenAfter { pat: String::from("d") }
+        }
+    }
     fn unknown(&mut self) -> String {
         let mut pat = String::new();
         self.chars.peeking_take_while(|ch|!ch.is_whitespace() && *ch != ';')
@@ -83,6 +103,7 @@ pub enum Token {
     Number { value: u8 },
     Operator {op_type: Operator },
     Unknown {pat: String},
+    ExpectedTokenAfter {pat: String},
 }
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -90,7 +111,8 @@ impl std::fmt::Display for Token {
             End => write!(f, "End of Input"),
             Number { value } => write!(f, "Numeric literal '{}'", value),
             Unknown { pat } => write!(f, "Unknown token '{}'", pat),
-            Token::Operator { op_type } => write!(f, "Operator: {}", op_type)
+            Token::Operator { op_type } => write!(f, "Operator: {}", op_type),
+            ExpectedTokenAfter { pat } => write!(f, "Missing token after {}", pat),
         }
     }
 }
