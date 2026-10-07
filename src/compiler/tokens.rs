@@ -68,7 +68,7 @@ impl<'a> Cursor<'a> {
         self.chars.peeking_take_while(|ch|ch.is_numeric()).for_each(|ch|number.push(ch));
         // unwrap is safe- the loop breaks as soon as a non-digit char is encountered,
         // so all chars are certain to be digits.
-        #[allow(clippy::unwrap_used)]
+        // BUT possible overflow = panic
         number.parse::<u8>().unwrap()
     }
     fn starts_d(&mut self) -> Result<Token, SyntaxError> {

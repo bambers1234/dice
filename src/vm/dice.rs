@@ -23,9 +23,6 @@ impl DiceRoll {
             .map(|x| *x).take(num_to_drop as usize).collect();
     }
 }
-
-
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum RollType {
     Normal(u8),
