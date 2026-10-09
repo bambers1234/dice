@@ -1,4 +1,4 @@
-use std::iter::Peekable;
+use std::{iter::Peekable, process::exit};
 use Token::*;
 use super::errors::SyntaxError;
 use crate::compiler::{operator::{Operator::{self, *}, DiceOps::{self, *}}};
@@ -12,9 +12,9 @@ pub fn tokenise(input: &'static str) -> Peekable<impl Iterator<Item = Token>> {
     // Unless we consume the iterator to produce a Vec, forcing it to completely drain before returning
     let mut cursor = Cursor::new(input);
     std::iter::from_fn(move || {
-            let token = cursor.advance_token();
-            if let End = token { None } else { Some(token) }
-        }).peekable()
+        let token = cursor.advance_token();
+        if let End = token { None } else {Some(token)}
+    }).peekable()
 }
 #[derive(Debug)]
 pub struct Cursor<'a> {
@@ -76,8 +76,7 @@ impl<'a> Cursor<'a> {
         self.next().unwrap();
         if let Some(char) = self.chars.peek() {
             if *char == 'l' {
-                #[allow(clippy::unwrap_used)]
-                self.next().unwrap();
+                self.next().ok_or_else(|| SyntaxError::token_not_found(String::from("d")))?;
                 Ok(Token::Operator { op_type: Operator::Dice(DiceOps::DropLowest) })
             } else if char.is_numeric() {
                 Ok(Token::Operator { op_type: Operator::Dice(DiceOps::Dice) })
