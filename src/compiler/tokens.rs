@@ -133,10 +133,11 @@ mod tests {
         assert!(tokens.next().is_none());
     }
     #[test]
+    #[should_panic]
     fn unknown_token() {
-        let mut tokens = tokenise("blah\n");
-        assert_eq!(tokens.next().unwrap(), Unknown { pat: String::from("blah")});
-        assert!(tokens.next().is_none());
+        let tokens = tokenise("blah\n");
+        // consume because iterators are lazy
+        tokens.for_each(|_| {});
     }
     #[test]
     fn add() {
