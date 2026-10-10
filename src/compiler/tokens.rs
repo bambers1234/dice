@@ -58,6 +58,7 @@ impl<'a> Cursor<'a> {
             '/' => {self.next(); Token::Operator { op_type: Div }},
             '-' => {self.next(); Token::Operator { op_type: Sub }},
             'k' => {self.next(); Token::Operator { op_type: Operator::Dice(KeepHighest) }},
+            '\n' => {self.next(); NewLine}
             _ => panic!("{}", SyntaxError::unknown_token(Unknown { pat: self.unknown() })),
         };
         token
@@ -103,6 +104,7 @@ pub enum Token {
     // only positive ints are supported
     Number { value: u8 },
     Operator {op_type: Operator },
+    NewLine,
     Unknown {pat: String},
 }
 impl std::fmt::Display for Token {
@@ -111,6 +113,7 @@ impl std::fmt::Display for Token {
             End => write!(f, "End of Input"),
             Number { value } => write!(f, "Numeric literal '{}'", value),
             Unknown { pat } => write!(f, "'{}'", pat),
+            NewLine => write!(f, " "),
             Token::Operator { op_type } => write!(f, "Operator: {}", op_type),
         }
     }

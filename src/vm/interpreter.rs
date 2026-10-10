@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::sync::RwLock;
 
 use super::bytecode::Bytecode;
@@ -24,15 +25,26 @@ impl Cursor {
 pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
     let mut bytes = Cursor::new(bytecode);
     let mut stack = STACK.write().expect("There has been a panic in the interpreter, causing the memory stack to poison.\nThis is a bug in the interpreter.");
+    
+        exe_expr(&mut bytes, &mut *stack)?;
+        // display the final item on the stack, the result of the whole computation
+        print!("{}", { if let Some(output) = stack.pop() {
+            format!("{}\n", output.to_string())
+        } else {
+            "".to_string()
+        }});
+        std::io::stdout().flush().unwrap();
+
+    // each expr has its own stack frame (and without function calls, previous frames are inaccessible)
+    stack.clear();
+    Ok(())
+}
+fn exe_expr(bytes: &mut Cursor, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
     while let Some(byte) = bytes.next() { // while bc for loop causes cannot borrow mutably more than once at a time
-        Bytecode::try_from(byte)?.execute(&mut stack, &mut bytes)?;
+        if Bytecode::try_from(byte)?.execute(stack, bytes)?.is_break() {
+            return Ok(())
+        };
     }
-    // display the final item on the stack, the result of the whole computation
-    println!("{}", { if let Some(output) = stack.pop() {
-        output.to_string()
-    } else {
-        "".to_string()
-    }});
     Ok(())
 }
 #[cfg(test)]

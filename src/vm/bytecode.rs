@@ -1,3 +1,5 @@
+use std::ops::ControlFlow;
+
 #[allow(unused)]
 use Bytecode::*;
 
@@ -15,6 +17,7 @@ pub enum Bytecode { // safer than raw bytes- holds the invariant of being known 
     DiceRollDropLowest,
     IntDiv,
     IntSub,
+    NewExpr,
 }
 impl TryFrom<u8> for Bytecode {
     type Error = InvalidBytecode;
@@ -28,6 +31,7 @@ impl TryFrom<u8> for Bytecode {
             INT_SUB => Ok(IntSub),
             DICE_ROLL_KEEP_HIGHEST => Ok(DiceRollKeepHighest),
             DICE_ROLL_DROP_LOWEST => Ok(DiceRollDropLowest),
+            NEW_EXPRESSION => Ok(NewExpr),
             _ => Err(InvalidBytecode::unknown_byte(value))
         }
     }
@@ -38,18 +42,24 @@ impl std::fmt::Display for Bytecode {
     }
 }
 impl Bytecode {
-    pub fn execute(&self, stack: &mut Vec<u8>, bytes: &mut impl Iterator<Item = u8>) -> Result<(), InvalidBytecode>{
+    /// Execute the bytecode. <br>
+    /// If there is no more bytecode in this expression, it will return ControlFlow::Break.
+    /// ## Errors
+    /// If the bytecode is invalid
+    pub fn execute(&self, stack: &mut Vec<u8>, bytes: &mut impl Iterator<Item = u8>) -> Result<ControlFlow<()>, InvalidBytecode>{
         match self {
-            LoadConst => load_const(bytes, stack),
-            IntAdd => int_add(stack),
-            IntMul => int_mul(stack),
-            DiceRoll => roll_dice(stack),
-            IntSub => int_sub(stack),
-            IntDiv => int_div(stack),
-            DiceRollKeepHighest => roll_dice_keep_highest(stack),
-            DiceRollDropLowest => roll_dice_drop_lowest(stack),
-        }
-    }   
+            LoadConst => load_const(bytes, stack)?,
+            IntAdd => int_add(stack)?,
+            IntMul => int_mul(stack)?,
+            DiceRoll => roll_dice(stack)?,
+            IntSub => int_sub(stack)?,
+            IntDiv => int_div(stack)?,
+            DiceRollKeepHighest => roll_dice_keep_highest(stack)?,
+            DiceRollDropLowest => roll_dice_drop_lowest(stack)?,
+            NewExpr => return Ok(ControlFlow::Break(())),
+        };
+        Ok(ControlFlow::Continue(()))
+    }  
 }
 mod execution {
     // be aware that the order on stack is the reverse of the order the parameters appear in, eg 2 - 1 has 1 then 2 on the stack
