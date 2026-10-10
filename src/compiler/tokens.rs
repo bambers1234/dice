@@ -1,4 +1,4 @@
-use std::{iter::Peekable, process::exit};
+use std::iter::Peekable;
 use Token::*;
 use super::errors::SyntaxError;
 use crate::compiler::{operator::{Operator::{self, *}, DiceOps::{self, *}}};
