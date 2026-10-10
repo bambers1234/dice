@@ -41,7 +41,7 @@ pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
 }
 fn exe_expr(bytes: &mut Cursor, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
     while let Some(byte) = bytes.next() { // while bc for loop causes cannot borrow mutably more than once at a time
-        if Bytecode::try_from(byte)?.execute(stack, bytes)?.is_break() {
+        if Bytecode::try_from(byte)?.execute(stack, bytes)?.is_end() {
             return Ok(())
         };
     }

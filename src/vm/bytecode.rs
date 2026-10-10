@@ -41,12 +41,29 @@ impl std::fmt::Display for Bytecode {
         write!(f, "{:?}", self)
     }
 }
+#[derive(Clone, Copy, Debug)]
+/// Whether the end of an expression has been reached
+pub enum ExpressionFlow {
+    Continue,
+    End
+}
+impl ExpressionFlow {
+    pub fn is_end(&self) -> bool {
+        match self {
+            Self::End => true,
+            _ => false,
+        }
+    }
+    pub fn is_continue(&self) -> bool {
+        !self.is_end()
+    }
+}
 impl Bytecode {
     /// Execute the bytecode. <br>
     /// If there is no more bytecode in this expression, it will return ControlFlow::Break.
     /// ## Errors
     /// If the bytecode is invalid
-    pub fn execute(&self, stack: &mut Vec<u8>, bytes: &mut impl Iterator<Item = u8>) -> Result<ControlFlow<()>, InvalidBytecode>{
+    pub fn execute(&self, stack: &mut Vec<u8>, bytes: &mut impl Iterator<Item = u8>) -> Result<ExpressionFlow, InvalidBytecode>{
         match self {
             LoadConst => load_const(bytes, stack)?,
             IntAdd => int_add(stack)?,
@@ -56,10 +73,16 @@ impl Bytecode {
             IntDiv => int_div(stack)?,
             DiceRollKeepHighest => roll_dice_keep_highest(stack)?,
             DiceRollDropLowest => roll_dice_drop_lowest(stack)?,
-            NewExpr => return Ok(ControlFlow::Break(())),
+            NewExpr => return Ok(ExpressionFlow::End),
         };
-        Ok(ControlFlow::Continue(()))
-    }  
+        Ok(ExpressionFlow::Continue)
+    }
+    pub fn expression_flow(&self) -> ExpressionFlow {
+        match self {
+            NewExpr => ExpressionFlow::End,
+            _ => ExpressionFlow::Continue,
+        }
+    }
 }
 mod execution {
     // be aware that the order on stack is the reverse of the order the parameters appear in, eg 2 - 1 has 1 then 2 on the stack

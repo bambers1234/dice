@@ -6,10 +6,6 @@ use itertools::Itertools;
 use std::str::Chars;
 /// Turn a given input string into a sequence of commands. Case sensitive and sensitive to leading and trailing whitespace
 pub fn tokenise(input: &'static str) -> Peekable<impl Iterator<Item = Token>> {
-    // vec is annoying to need, but iterators are lazy
-    // so the tokenised string is used after the function returns
-    // And does not live long enough
-    // Unless we consume the iterator to produce a Vec, forcing it to completely drain before returning
     let mut cursor = Cursor::new(input);
     std::iter::from_fn(move || {
         let token = cursor.advance_token();
