@@ -1,4 +1,4 @@
-use std::ops::ControlFlow;
+
 
 #[allow(unused)]
 use Bytecode::*;
@@ -17,7 +17,6 @@ pub enum Bytecode { // safer than raw bytes- holds the invariant of being known 
     DiceRollDropLowest,
     IntDiv,
     IntSub,
-    NewExpr,
 }
 impl TryFrom<u8> for Bytecode {
     type Error = InvalidBytecode;
@@ -31,7 +30,6 @@ impl TryFrom<u8> for Bytecode {
             INT_SUB => Ok(IntSub),
             DICE_ROLL_KEEP_HIGHEST => Ok(DiceRollKeepHighest),
             DICE_ROLL_DROP_LOWEST => Ok(DiceRollDropLowest),
-            NEW_EXPRESSION => Ok(NewExpr),
             _ => Err(InvalidBytecode::unknown_byte(value))
         }
     }
@@ -41,29 +39,11 @@ impl std::fmt::Display for Bytecode {
         write!(f, "{:?}", self)
     }
 }
-#[derive(Clone, Copy, Debug)]
-/// Whether the end of an expression has been reached
-pub enum ExpressionFlow {
-    Continue,
-    End
-}
-impl ExpressionFlow {
-    pub fn is_end(&self) -> bool {
-        match self {
-            Self::End => true,
-            _ => false,
-        }
-    }
-    pub fn is_continue(&self) -> bool {
-        !self.is_end()
-    }
-}
 impl Bytecode {
     /// Execute the bytecode. <br>
-    /// If there is no more bytecode in this expression, it will return ControlFlow::Break.
     /// ## Errors
     /// If the bytecode is invalid
-    pub fn execute(&self, stack: &mut Vec<u8>, bytes: &mut impl Iterator<Item = u8>) -> Result<ExpressionFlow, InvalidBytecode>{
+    pub fn execute(&self, stack: &mut Vec<u8>, bytes: &mut impl Iterator<Item = u8>) -> Result<(), InvalidBytecode>{
         match self {
             LoadConst => load_const(bytes, stack)?,
             IntAdd => int_add(stack)?,
@@ -73,15 +53,8 @@ impl Bytecode {
             IntDiv => int_div(stack)?,
             DiceRollKeepHighest => roll_dice_keep_highest(stack)?,
             DiceRollDropLowest => roll_dice_drop_lowest(stack)?,
-            NewExpr => return Ok(ExpressionFlow::End),
         };
-        Ok(ExpressionFlow::Continue)
-    }
-    pub fn expression_flow(&self) -> ExpressionFlow {
-        match self {
-            NewExpr => ExpressionFlow::End,
-            _ => ExpressionFlow::Continue,
-        }
+        Ok(())
     }
 }
 mod execution {

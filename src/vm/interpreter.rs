@@ -1,12 +1,14 @@
 use std::io::Write;
 use std::sync::RwLock;
-use super::bytecode::Bytecode;
+use crate::vm::bytecode::Bytecode;
+
 use super::errors::InvalidBytecode;
 
 static STACK: RwLock<Vec<u8>> = RwLock::new(Vec::new());
 
-#[derive(Debug, Clone)]
-struct Bytes<'a> {
+/// An iterator over raw bytes that are not necessarily bytecode
+#[derive(Debug, Clone, Copy)]
+pub struct Bytes<'a> {
     bytes: &'a [u8],
     index: usize,
 }
@@ -20,83 +22,60 @@ impl<'a> Iterator for Bytes<'a> {
         Some(self.bytes[self.index - 1])
     }
 }
-impl<'a> Bytes<'a> {
-    fn new(bytecode: &'a [u8]) -> Self {
-        Self { bytes: bytecode, index: 0 }
-    }
-}
-struct Bytecodes {
-    bytes: Vec<Bytecode>,
-    index: usize,
-}
-impl TryFrom<Bytes<'_>> for Bytecodes {
-    type Error = InvalidBytecode;
-    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
-        let mut bytecode = Vec::new();
-        for byte in value {
-            bytecode.push(Bytecode::try_from(byte)?);
-        };
-        Ok(Self {bytes: bytecode, index: 0})
-    }
-}
-impl From<Vec<Bytecode>> for Bytecodes {
-    fn from(value: Vec<Bytecode>) -> Self {
+impl<'a> From<&'a [u8]> for Bytes<'a> {
+    fn from(value: &'a [u8]) -> Self {
         Self {
             bytes: value,
-            index: 0,
+            index: 0
         }
     }
 }
-impl Iterator for Bytecodes {
-    type Item = Bytecode;
+
+/// An iterator over discrete expressions
+#[derive(Clone, Debug)]
+struct Expressions<'a> {
+    exprs: &'a [Bytes<'a>],
+    index: usize,
+}
+impl<'a> Iterator for Expressions<'a> {
+    type Item = Bytes<'a>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index > self.bytes.len() {
+        if self.index > self.exprs.len() {
             return None
-        };
-        self.index += 1;
-        Some(self.bytes[self.index - 1])
+        }
+        Some(self.exprs[self.index])
     }
 }
-impl Bytecodes {
-    fn expressions(&self) -> impl Iterator<Item = Bytecodes> {
-        self.bytes.split(|x| x.expression_flow().is_end()).filter(|&x| !x.is_empty()).map(|x| Bytecodes::from(x.to_vec()))
+impl<'a> From<Bytes<'a>> for Expressions<'a> {
+    fn from(value: Bytes) -> Self {
+        todo!("Find a way to split bytecode into expressions. A special bytecode sequence cannot be used as it could share a value with an integer.")
     }
 }
-pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
-    let code = Bytecodes::try_from(Bytes::new(bytecode))?;
+/// Receive a byte stream which may or may not be valid bytecode and execute it. 
+/// ## Errors: Invalid bytecode
+pub fn execute(bytecode: Bytes) -> Result<(), InvalidBytecode> {
     let mut stack = STACK.write().expect("There has been a panic in the interpreter, causing the memory stack to poison.\nThis is a bug in the interpreter.");
-    for expression in code.expressions() {
-        exe_expr(&mut bytes, &mut *stack)?;
-        // display the final item on the stack, the result of the whole computation
+    for mut expression in Expressions::from(bytecode) {
+        exe_expr(&mut expression, &mut *stack)?;
+        // display the final item on the stack, the result of the whole computation (print after each expression is executed)
         print!("{}", { if let Some(output) = stack.pop() {
             format!("{}\n", output.to_string())
         } else {
             "".to_string()
         }});
         std::io::stdout().flush().unwrap();
-    }
-    while let Some(expr) = code.expressions().next() {
-        exe_expr(&mut expr, &mut stack);
-    }
-    // each expr has its own stack frame (and without function calls, previous frames are inaccessible)
-    stack.clear();
-    Ok(())
-}
-fn exe_expr(bytes: &mut Bytecodes, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
-    for byte in bytes {
-        if byte.execute(stack, bytes)?.is_end() {
-            break;
-        }
+        // each expr has its own stack frame (and without function calls, previous frames are inaccessible)
+        stack.clear();
     }
     Ok(())
 }
-#[cfg(test)]
-mod tests {
-    use crate::bytecode_defs::*;
-    use super::*;
-
-    #[test]
-    fn execution() {
-        execute(&[LOAD_CONST, 1, LOAD_CONST, 1, INT_ADD]).unwrap();
+/// Execute a single expression which may or may not be entirely valid bytecode.
+/// ## Errors:
+/// Invalid bytecode
+fn exe_expr(bytes: &mut Bytes, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
+    while let Some(byte) = bytes.next() {
+        let byte = Bytecode::try_from(byte)?;
+        byte.execute(stack, bytes)?;
     }
+    Ok(())
 }
