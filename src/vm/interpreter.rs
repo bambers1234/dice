@@ -1,52 +1,71 @@
 use std::io::Write;
 use std::sync::RwLock;
-
 use super::bytecode::Bytecode;
 use super::errors::InvalidBytecode;
 
 static STACK: RwLock<Vec<u8>> = RwLock::new(Vec::new());
 
 #[derive(Debug, Clone)]
-struct Bytes {
-    bytes: std::vec::IntoIter<u8>,
+struct Bytes<'a> {
+    bytes: &'a [u8],
+    index: usize,
 }
-impl Iterator for Bytes {
+impl<'a> Iterator for Bytes<'a> {
     type Item = u8;
     fn next(&mut self) -> Option<Self::Item> {
-        self.bytes.next()
+        if self.index > self.bytes.len() {
+            return None
+        };
+        self.index += 1;
+        Some(self.bytes[self.index - 1])
     }
 }
-impl Bytes {
-    fn new(bytecode: &[u8]) -> Self {
-        let vec = Vec::from(bytecode).into_iter();
-        Self { bytes: vec }
-    }
-    fn bytecode(self) -> Bytecodes {
-        
+impl<'a> Bytes<'a> {
+    fn new(bytecode: &'a [u8]) -> Self {
+        Self { bytes: bytecode, index: 0 }
     }
 }
 struct Bytecodes {
-    bytecodes: 
+    bytes: Vec<Bytecode>,
+    index: usize,
+}
+impl TryFrom<Bytes<'_>> for Bytecodes {
+    type Error = InvalidBytecode;
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        let mut bytecode = Vec::new();
+        for byte in value {
+            bytecode.push(Bytecode::try_from(byte)?);
+        };
+        Ok(Self {bytes: bytecode, index: 0})
+    }
+}
+impl From<Vec<Bytecode>> for Bytecodes {
+    fn from(value: Vec<Bytecode>) -> Self {
+        Self {
+            bytes: value,
+            index: 0,
+        }
+    }
 }
 impl Iterator for Bytecodes {
     type Item = Bytecode;
     fn next(&mut self) -> Option<Self::Item> {
-        
+        if self.index > self.bytes.len() {
+            return None
+        };
+        self.index += 1;
+        Some(self.bytes[self.index - 1])
     }
 }
-struct Expressions {
-    
-}
-impl Iterator for Expressions {
-    type Item = Bytes;
-    fn next(&mut self) -> Option<Self::Item> {
-        
+impl Bytecodes {
+    fn expressions(&self) -> impl Iterator<Item = Bytecodes> {
+        self.bytes.split(|x| x.expression_flow().is_end()).filter(|&x| !x.is_empty()).map(|x| Bytecodes::from(x.to_vec()))
     }
 }
 pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
-    let mut bytes = Bytes::new(bytecode);
+    let code = Bytecodes::try_from(Bytes::new(bytecode))?;
     let mut stack = STACK.write().expect("There has been a panic in the interpreter, causing the memory stack to poison.\nThis is a bug in the interpreter.");
-    
+    for expression in code.expressions() {
         exe_expr(&mut bytes, &mut *stack)?;
         // display the final item on the stack, the result of the whole computation
         print!("{}", { if let Some(output) = stack.pop() {
@@ -55,16 +74,19 @@ pub fn execute(bytecode: &[u8]) -> Result<(), InvalidBytecode> {
             "".to_string()
         }});
         std::io::stdout().flush().unwrap();
-
+    }
+    while let Some(expr) = code.expressions().next() {
+        exe_expr(&mut expr, &mut stack);
+    }
     // each expr has its own stack frame (and without function calls, previous frames are inaccessible)
     stack.clear();
     Ok(())
 }
-fn exe_expr(bytes: &mut Bytes, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
-    while let Some(byte) = bytes.next() { // while bc for loop causes cannot borrow mutably more than once at a time
-        if Bytecode::try_from(byte)?.execute(stack, bytes)?.is_end() {
-            return Ok(())
-        };
+fn exe_expr(bytes: &mut Bytecodes, stack: &mut Vec<u8>) -> Result<(), InvalidBytecode>{
+    for byte in bytes {
+        if byte.execute(stack, bytes)?.is_end() {
+            break;
+        }
     }
     Ok(())
 }
