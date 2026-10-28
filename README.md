@@ -17,6 +17,7 @@ XdN - rolls X N-sided dice and sums them, where X and N are positive integers<br
 XdNkY - as above, but sums only the highest Y dice<br>
 XdNdlY - as above, but drops the lowest Y dice and does not sum them<br>
 +,-,/,* - arithmetic operators. Applying an operator to a dice roll takes the sum of the rolls as an operand.<br>
-Please note the compiler does not support negative or fractional values at this time; as such, / operator may cause a crash. This is being worked on.
+Please note the compiler does not support negative or fractional values at this time; as such, / operator may cause a crash. This is being worked on.<br>
+All numbers used must be within the range 0-255 inclusive.
 <br><br>
 If you find an error in the compiler, please fill out an Issue with the full compiler output and your input
