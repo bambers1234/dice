@@ -73,7 +73,7 @@ impl<'a> Cursor<'a> {
         self.next().unwrap();
         if let Some(char) = self.chars.peek() {
             if *char == 'l' {
-                self.next().ok_or_else(|| SyntaxError::token_not_found(String::from("d")))?;
+                self.next().ok_or_else(|| SyntaxError::token_not_found(String::from("dl")))?;
                 Ok(Token::Operator { op_type: Operator::Dice(DiceOps::DropLowest) })
             } else if char.is_numeric() {
                 Ok(Token::Operator { op_type: Operator::Dice(DiceOps::Dice) })
