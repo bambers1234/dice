@@ -1,5 +1,3 @@
-
-
 #[allow(unused)]
 use Bytecode::*;
 
@@ -17,6 +15,7 @@ pub enum Bytecode { // safer than raw bytes- holds the invariant of being known 
     DiceRollDropLowest,
     IntDiv,
     IntSub,
+    NewExpr,
 }
 impl TryFrom<u8> for Bytecode {
     type Error = InvalidBytecode;
@@ -30,6 +29,7 @@ impl TryFrom<u8> for Bytecode {
             INT_SUB => Ok(IntSub),
             DICE_ROLL_KEEP_HIGHEST => Ok(DiceRollKeepHighest),
             DICE_ROLL_DROP_LOWEST => Ok(DiceRollDropLowest),
+            NEW_EXPRESSION => Ok(NewExpr),
             _ => Err(InvalidBytecode::unknown_byte(value))
         }
     }
@@ -53,6 +53,7 @@ impl Bytecode {
             IntDiv => int_div(stack)?,
             DiceRollKeepHighest => roll_dice_keep_highest(stack)?,
             DiceRollDropLowest => roll_dice_drop_lowest(stack)?,
+            NewExpr => end_expression(stack)?,
         };
         Ok(())
     }
@@ -119,6 +120,11 @@ mod execution {
     }
     fn get_stack(stack: &mut Vec<u8>, op: Bytecode) -> Result<u8, InvalidBytecode> {
         stack.pop().ok_or_else(||InvalidBytecode::not_enough_on_stack(op))
+    }
+    pub fn end_expression(stack: &mut Vec<u8>) -> ExecutionResult {
+        println!("{}", get_stack(stack, NewExpr)?);
+        stack.clear(); // erasing memory catches unexpected behaviour
+        Ok(())
     }
 }
 // TODO: use a macro to auto-generate TryFrom<u8> for Bytecode due to large number of variants
